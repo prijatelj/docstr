@@ -214,18 +214,23 @@ class DocstringParser(object):
         name_pattern = '[ \t]+(?P<name>[\*\w]+)'
         doc_pattern = f'[ \t]*(?P<doc>.*?){section_end_pattern}'
 
+        # TODO Create unit tests to ensure the name & doc patterns extract
+        # appropriately.
+
         # Regexes for checking and parsing the types of sections
         self.re_param = re.compile(f':param{name_pattern}:{doc_pattern}', re.S)
         self.re_type = re.compile(f':type{name_pattern}:{doc_pattern}', re.S)
 
         self.re_returns = re.compile(':returns:{doc_pattern}', re.S)
-        self.re_returns = re.compile(':rtype:{doc_pattern}', re.S)
+        self.re_rtype = re.compile(':rtype:{doc_pattern}', re.S)
 
         self.re_attribute = re.compile(
             f'\.\.[ \t]*attribute[ \t]*::{name_pattern}[ \t]*\n{doc_pattern}',
             re.S,
         )
         # TODO extract attribute type ':type: <value>\n'
+        #   Need to fix doc pattern here... this is wrong.
+        self.re_attr_type = re.compile('[ \t]+:type:{doc_pattern}', re.S)
 
         #self.re_other_params = re.compile()
 
