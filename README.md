@@ -1,5 +1,51 @@
-## Docstr
+## Docstr : Docstring Parsing for Expedient Programming
 
-Docstring parsing for convenient creation of argument and configuration
-parsers, as well as other useful metaprogramming utilities to expedite common
-coding practices.
+The objective of docstr is to make use of properly written docstrings that would be used to create auto-docs through Sphinx and leverage them at runtime to expedite certain programming practices, such as the creation of arg and config parsers, the modular configuration of OOP pipelines, and for leveraging the accurate dpcstrings to reduce text duplication in code.
+
+### Design Principles
+
+- Keep it simple
+    - and functional
+- Write once
+    - reduce redundant code and make it so common code does not need be rewritten for the same functionality.
+- Modularity
+    - Keep as modular as possible such that each unit may be removed, replaced, or taken and plugged into a different system.
+- Efficiency
+    - efficient coding and execution
+
+### Verisoning
+
+Docstr uses Semantic Versioning 2.0.0.
+Docstr's version will remain < 1.0.0 until adequate unit test coverage exists.
+
+#### Desired Features for Version 1
+
+The following are desired features for a complete docstr version 1.0.0:
+
+- Auto-generation of an argparser with config support and optional nested namespaces through the parsing of function and class docstrings.
+    - functions first
+    - classes next
+    - linking of docstrings for use in parsing to avoid doc redundancy
+    - support of reStructuredText, Google and Numpy styled docstrings
+        - support of custom docstring parsers through Sphinx extentions.
+    - This is the primary purpose of docstr
+- Decorator for specifying the args and kwargs of a function with format as:
+    `def func(*args, **kwargs):` to avoid redundant writing of args, defaults, etc.
+- Decorator for optional type-checking of variables values at runtime to the
+  docstring's preset values.
+- Comprehensive unit tests to ensure everything functions as expected.
+    - Along with basic CI/CD on github to check build status.
+- Hierarchical pipeline support as specified by a yaml config file
+    - This allows programmers to focus on OOP design and create their pipelines as modules to be easily sequentially chained or parallelized, and allows the programmer to avoid having to write the boiler plate commonly used in pipelines.
+    - This is nearing extra, and programmers would still be able to write the main scripts or call these functions in their own existing programs.
+    - End result would be: given a yaml config of a pipeline consisting of python objects in the active namespace who all have parsable docstrings, generate the pipeline running main script with its CLI/configuraiton parser.
+- Extra features: features that are unnecessary, but beneficial
+    - Parameter iteration and searching (possibly using `pyrameter` or `SHADHO`) to run multiple versions of the same pipeline using different parameters, either
+        - This is specifically useful to Machine Learning (ML) researchers, but may be nice for those who either want to exhaustively run variations of their pipeline or have some objective function they want to optimize over different variations of their pipeline.
+        - in ML, the pipeline and its parameter search would be entirely contained all in one yaml file, or multiple through optoinal config linking.
+            This would result in a straightforward overview of the ML pipeline, easily swapped with existing modules written in code as classes.
+
+### License
+
+The docstr project is licensed under the MIT license by its author Derek S. Prijatelj.
+The license is provided in LICENSE.txt
