@@ -6,6 +6,7 @@ from keyword import iskeyword
 import re
 from typing import NamedTuple
 
+import docutils
 from sphinx.ext.autodoc import getdoc, prepare_docstring
 from sphinx.ext.napoleon import Config, GoogleDocstring, NumpyDocstring
 
@@ -36,6 +37,16 @@ class ValueExists(Flag):
     """Enum for standing in for a non-existent default value."""
     true = True
     false = False
+
+
+class MultiType(object):
+    """A list of multiple types for when a variable may take multiple types."""
+    def __init__(types):
+        if not isinstance(types, list) and not isinstance(types, tuple):
+            raise TypeError(
+                f'types must be a list or tuple, not: {type(types)}'
+            )
+        self.types = types
 
 
 # Docstring object that contains the parts of the docstring post parsing
@@ -170,6 +181,19 @@ class ClassDocstring(Docstring):
         self.init_docstring  = init_docstring
 
 
+def parse_rst(text: str) -> docutils.nodes.document:
+    """Parses given RST text into a docutils document."""
+    parser = docutils.parsers.rst.Parser()
+    components = (docutils.parsers.rst.Parser,)
+    settings = docutils.frontend.OptionParser(
+        components=components,
+    ).get_default_values()
+    document = docutils.utils.new_document('<rst-doc>', settings=settings)
+    parser.parse(text, document)
+
+    return document
+
+
 class DocstringParser(object):
     """Docstring parsing.
 
@@ -206,20 +230,28 @@ class DocstringParser(object):
         self.re_field = re.compile(':[ \t]*(\w[ \t]*)+:')
         self.re_directive = re.compile('\.\.[ \t]*(\w[ \t]*)+:')
         self.re_section = re.compile(
-            '|'.join([self.re_field.pattern, self.re_directive])
+            '|'.join([self.re_field.pattern, self.re_directive.pattern])
         )
 
         # Temporary useful patterns
         section_end_pattern = f'({self.re_section.pattern}|\Z)'
         name_pattern = '[ \t]+(?P<name>[\*\w]+)'
-        doc_pattern = f'[ \t]*(?P<doc>.*?){section_end_pattern}'
+        doc_pattern = f'[ \t]*(?P<doc>.*?)({section_end_pattern})'
 
         # TODO Create unit tests to ensure the name & doc patterns extract
         # appropriately.
 
         # Regexes for checking and parsing the types of sections
-        self.re_param = re.compile(f':param{name_pattern}:{doc_pattern}', re.S)
+        #self.re_param = re.compile(f':param{name_pattern}:{doc_pattern}', re.S)
+        self.re_param = re.compile(f'param{name_pattern}', re.S)
         self.re_type = re.compile(f':type{name_pattern}:{doc_pattern}', re.S)
+
+        # For parsing the inner parts of a parameter type string.
+        #TODO make so it captures only one type or multi-types.
+        self.re_typedoc = re.compile('[\w\.]+', re.S)
+        self.re_default = re.compile(
+            '(?:=|,[ \t]*default)[ \t]*(?P<default>[^\s]+)'
+        )
 
         self.re_returns = re.compile(':returns:{doc_pattern}', re.S)
         self.re_rtype = re.compile(':rtype:{doc_pattern}', re.S)
@@ -260,15 +292,84 @@ class DocstringParser(object):
         #   TODO Get all param names, their types (default to object w/ logging
         #   of no set type), and their descriptions
 
-        # Prepare the paired sets for parameters to catch dups, & missing pairs
-        param_set = set()
-        type_set = set()
-
         if len(docstring) < 1:
             raise ValueError('The docstring is only a short description!')
 
         # Short description is always the first line only
         short_description = docstring[0]
+
+        docstring = '\n'.join(docstring)
+
+        if long_desc_end_idx := doc.first_child_not_matching_class(
+            docutils.nodes.paragraph
+        ):
+            long_description = '\n'.join([ch.astext() for ch in doc.children])
+
+        if not field_list := doc.first_child_not_matching_class(
+            docutils.nodes.field_list
+        ):
+            raise ValueError('The given docstring includes no fields!')
+
+        # The field list includes params, types, returns, and rtypes,
+        field_list = doc.children[field_list]
+
+        # Prepare the paired dicts for params to catch dups, & missing pairs
+        params = OrderedDict()
+        types = OrderedDict()
+        # Go through the field_list and parse the values.
+        for field in field_list:
+            field_name = field.children[0].astext()
+            if name := self.re_param.findall(field_name):
+                if name in params:
+                    raise KeyError('Duplicate parameter!')
+                param = ParameterDoc(
+                    name=name,
+                    description=field.children[0][1].astext(),
+                    type=type,
+                )
+            elif name := self.re_type.findall(field_name):
+                if name in types:
+                    raise KeyError('Duplicate parameter type!')
+
+                # TODO type parser: [type[| type]*][ = [default]][, optional]
+                #   thus requiring a multi-type object, just a special class
+                #   that encapsulates a list.
+                type_str = field.children[0][1].astext()
+                parsed_type = next(self.re_typedoc.finditer(type_str))[0]
+
+                if '.' in parsed_type and not all(
+                    [part.isidentifier() for k in parsed_type.split('.')]
+                ):
+                    raise ValueError(
+                        'The parameter type consists of not identifier parts'
+                    )
+                elif keyword.iskeyword(parsed_type):
+                    raise ValueError(
+                        'The parameter type cannot be a keyword!'
+                    )
+
+                # Remove parsed type
+                type_str = type_str[len(parsed_type):]
+
+                if default := self.re_default.findall(type_str):
+                    default = default[0]
+                else:
+                    default = ValueExists.False
+
+                if name in params:
+                    # Update the existing ParameterDoc.
+                    types[name] = ValueExists.True
+                    params[name].type = parsed_type
+                    params[name].default = default
+                else:
+                    # Save the partially made parameter doc for later.
+                    types[name] = ParameterDoc(
+                        name=name,
+                        description=ValueExists.False,
+                        type=type,
+                        default=default,
+                    )
+            # TODO Handle attrs, attr type, returns rtype
 
         # TODO Get the start indices of any & all sections (Could parallelize)
         section_start_indices = []
@@ -294,8 +395,10 @@ class DocstringParser(object):
                 raise ValueError(
                     'The docstring does not include a parameters section!'
                 )
+
             # TODO do something with param_parsed, and make param regex extract
             # the name and doc.
+
         else:
             # TODO check first section and for rest loop thru the sections by
             # [start_idx:end] where end is the current itr and prior updates to
