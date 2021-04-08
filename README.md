@@ -15,7 +15,7 @@ The objective of docstr is to make use of properly written docstrings that would
 
 ### Verisoning
 
-Docstr uses Semantic Versioning 2.0.0.
+Docstr uses [Semantic Versioning 2.0.0](https://semver.org/spec/v2.0.0.html).
 Docstr's version will remain < 1.0.0 until adequate unit test coverage exists.
 
 #### Desired Features for Version 1
