@@ -272,8 +272,9 @@ class DocstringParser(object):
             re.S,
         )
 
-    def parse_func(self, docstring, name, obj_type):
+    def parse_func(self, docstring, name):
         """Parse the docstring of a function."""
+        #docstring = obj.__doc__
         docstring = prepare_docstring(docstring)
 
         # NOTE for now, use what is specified at initialization
@@ -390,77 +391,9 @@ class DocstringParser(object):
 
             # TODO any unmatched pairs of params and types raises an error
 
-        # TODO Get the start indices of any & all sections (Could parallelize)
-        section_start_indices = []
-        # TODO this would be way nicer with a kind of top down tokenization
-        # where each token then can be further broken down, so Section, then
-        # the section type, then its parts. This is where the above dataclasses
-        # having their own parser functions for RST would be good. This would
-        # probably involve back tracking tho and multiple passes.
-        for i, line in enumerate(docstring[1:], start=1):
-            if self.re_section.match(line):
-                section_start_indices.append(i)
-
-        # Long description initial text till next section or end of str.
-        # TODO consider smarter combine to avoid forced column lengths in desc
-        long_description = '\n'.join(docstring[:section_start_indices[0]])
-
-        num_sections = len(section_start_indices)
-        if num_sections < 1:
-            raise ValueError('The given docstring includes no sections.')
-        elif num_sections == 1:
-            # TODO if 1 section, then check if params, ow. error
-            if not (param_parsed := self.re_param.match()):
-                raise ValueError(
-                    'The docstring does not include a parameters section!'
-                )
-
-            # TODO do something with param_parsed, and make param regex extract
-            # the name and doc.
-
-        else:
-            # TODO check first section and for rest loop thru the sections by
-            # [start_idx:end] where end is the current itr and prior updates to
-            # this sections beginning.
-
-            # Add the end value so a check is unnecessary repetitively
-            section_start_indices.append(len(docstring))
-
-            param = []
-            types = []
-            returns = None
-            rtype = None
-            for i, line in enumerate(section_start_indices[1:], start=1):
-                # TODO parse the section between docstring[i - 1:i]
-                if section_parsed := self.re_param.match(line):
-                    param_indices.append(i)
-                elif section_parsed := self.re_type.match(line):
-                    param_indices.append(i)
-                elif section_parsed := self.attribute.match(line):
-                    attr_indices.append(i)
-                elif section_parsed := self.re_returns.match(line):
-                    if returns is None:
-                        returns = PARSE_RETURNS_SECTION
-                    else:
-                        raise SyntaxError(' '.join([
-                            'The docstring cannot have more than one',
-                            '`returns` section.',
-                        ]))
-                elif section_parsed := self.re_rtype.match(line):
-                    if rtype is None:
-                        rtype = PARSE_RTYPE_SECTION
-                    else:
-                        raise SyntaxError(' '.join([
-                            'The docstring cannot have more than one `rtype`',
-                            'section.',
-                        ]))
-                # else: Some other section, save as {str : str} in other_sectios
-
-        # Rejoin lines into one str for regex. This strikes me as inefficient
-        #docstring = '\n'.join(docstring)
 
         # Return the Docstring Object that stores that docsting info
-        raise NotImplemented()
+        raise NotImplementedError()
 
     def parse(
         self,
@@ -513,27 +446,26 @@ class DocstringParser(object):
                     'If `obj` is a `str` then must also give `name` and',
                     '`obj_type`',
                 ]))
-            return self.parse_func(obj, name, obj_type)
         elif hasattr(obj, '__doc__') and hasattr(obj, '__name__'):
             # Obtain info from the object itself
             name = obj.__name__
             obj_type = type(obj)
-
-            # TODO if a class, then parse the __init__ too, but as the main
-            # docstring of interest. As it defines the params to give, and thus
-            # the args we care about.
-            if isinstance(obj_type, type):
-                class_docstring = obj.__doc__
-                init_docstring = self.parse_func(obj.__init__)
-
-                raise NotImplementedError('Need to add parsing of a class')
-                # TODO add parsing of a class' methods in given list.
-                return ClassDocstring(name, obj_type, description, )
-
-            return self.parse_func(obj.__doc__, name, obj_type)
         else:
             raise TypeError(' '.join([
                 'Expected `obj` to be an object with `__doc__` and `__name__`',
                 'attributes, or a `str` with the `name` and `obj_type`',
                 'parameters given.',
             ]))
+
+        # TODO if a class, then parse the __init__ too, but as the main
+        # docstring of interest. As it defines the params to give, and thus
+        # the args we care about.
+        if isinstance(obj_type, type):
+            class_docstring = obj.__doc__
+            init_docstring = self.parse_func(obj.__init__, '__init__')
+
+            raise NotImplementedError('Need to add parsing of a class')
+            # TODO add parsing of a class' methods in given list.
+            #return ClassDocstring(name, obj_type, description, )
+
+        return self.parse_func(obj.__doc__, name)#, obj_type)
