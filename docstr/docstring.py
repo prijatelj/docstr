@@ -41,7 +41,7 @@ class ValueExists(Flag):
 
 class MultiType(object):
     """A list of multiple types for when a variable may take multiple types."""
-    def __init__(types):
+    def __init__(self, types):
         if not isinstance(types, list) and not isinstance(types, tuple):
             raise TypeError(
                 f'types must be a list or tuple, not: {type(types)}'
@@ -247,11 +247,12 @@ class DocstringParser(object):
         self.re_type = re.compile(f':type{name_pattern}:{doc_pattern}', re.S)
 
         # For parsing the inner parts of a parameter type string.
-        #TODO make so it captures only one type or multi-types.
-        self.re_typedoc = re.compile('[\w\.]+', re.S)
+        # Captures the type or multi-types as a list
         self.re_default = re.compile(
-            '(?:=|,[ \t]*default)[ \t]*(?P<default>[^\s]+)'
+            '(?<=|,[ \t]*default)[ \t]*(?P<default>[^\s]+)'
         )
+        # Must be applied after default match is removed
+        self.re_typedoc = re.compile('(?:[ \t]*\|[ \t]*)*(\w[\w\.]*)', re.S)
 
         self.re_returns = re.compile(':returns:{doc_pattern}', re.S)
         self.re_rtype = re.compile(':rtype:{doc_pattern}', re.S)
@@ -300,14 +301,17 @@ class DocstringParser(object):
 
         docstring = '\n'.join(docstring)
 
+        # Use docutils to parse the RST
+        doc = parse_rst(docstring)
+
         if long_desc_end_idx := doc.first_child_not_matching_class(
             docutils.nodes.paragraph
         ):
             long_description = '\n'.join([ch.astext() for ch in doc.children])
 
-        if not field_list := doc.first_child_not_matching_class(
+        if not (field_list := doc.first_child_not_matching_class(
             docutils.nodes.field_list
-        ):
+        )):
             raise ValueError('The given docstring includes no fields!')
 
         # The field list includes params, types, returns, and rtypes,
@@ -334,42 +338,57 @@ class DocstringParser(object):
                 # TODO type parser: [type[| type]*][ = [default]][, optional]
                 #   thus requiring a multi-type object, just a special class
                 #   that encapsulates a list.
+                # TODO support dataclass format: param = default -> type
                 type_str = field.children[0][1].astext()
-                parsed_type = next(self.re_typedoc.finditer(type_str))[0]
 
-                if '.' in parsed_type and not all(
-                    [part.isidentifier() for k in parsed_type.split('.')]
-                ):
-                    raise ValueError(
-                        'The parameter type consists of not identifier parts'
-                    )
-                elif keyword.iskeyword(parsed_type):
-                    raise ValueError(
-                        'The parameter type cannot be a keyword!'
-                    )
+                # Parse default first & remove to get the re multi-type to work
+                if default := self.re_default.search(type_str):
+                    span = default.span()
+                    default = self.re_default.findall(
+                        type_str[span[0]:span[1]]
+                    )[0]
 
-                # Remove parsed type
-                type_str = type_str[len(parsed_type):]
-
-                if default := self.re_default.findall(type_str):
-                    default = default[0]
+                    type_str = type_str[:[0]]
                 else:
-                    default = ValueExists.False
+                    default = ValueExists.false
 
+                parsed_type = self.re_typedoc.findall(type_str)
+
+                if len(parsed_type) < 1:
+                    raise SyntaxError('No type found.')
+
+                for found in parsed_type:
+                    if '.' in found and not all(
+                        [part.isidentifier() for part in found.split('.')]
+                    ):
+                        raise ValueError(
+                            'Parameter type consists of not identifier parts'
+                        )
+                    elif iskeyword(found):
+                        raise ValueError(
+                            'The parameter type cannot be a keyword!'
+                        )
+
+                if len(parsed_type) > 1:
+                    parsed_type = MultiType(parsed_type)
+
+                # Update the params and types
                 if name in params:
                     # Update the existing ParameterDoc.
-                    types[name] = ValueExists.True
+                    types[name] = ValueExists.true
                     params[name].type = parsed_type
                     params[name].default = default
                 else:
                     # Save the partially made parameter doc for later.
                     types[name] = ParameterDoc(
                         name=name,
-                        description=ValueExists.False,
-                        type=type,
+                        description=ValueExists.false,
+                        type=parsed_type,
                         default=default,
                     )
             # TODO Handle attrs, attr type, returns rtype
+
+            # TODO any unmatched pairs of params and types raises an error
 
         # TODO Get the start indices of any & all sections (Could parallelize)
         section_start_indices = []
@@ -444,6 +463,7 @@ class DocstringParser(object):
         raise NotImplemented()
 
     def parse(
+        self,
         obj,
         style=None,
         doc_linking=False,
