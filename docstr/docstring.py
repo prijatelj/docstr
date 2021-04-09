@@ -181,12 +181,29 @@ class ClassDocstring(Docstring):
         self.init_docstring  = init_docstring
 
 
+class Attribute(docutils.nodes.Inline, docutils.nodes.TextElement):
+    pass
+
+
+class AttributeDirective(docutils.parsers.rst.Directive):
+    """ReST parser for python class docstring attributes."""
+    required_arguments = 1
+    optional_arguments = 1
+    has_content = True
+    def run(self):
+        return [Attribute(text=self.arguments[0])]
+
+
 def parse_rst(text: str) -> docutils.nodes.document:
     """Parses given RST text into a docutils document."""
+    docutils.parsers.rst.directives.register_directive(
+        'attribute',
+        AttributeDirective,
+    )
+
     parser = docutils.parsers.rst.Parser()
-    components = (docutils.parsers.rst.Parser,)
     settings = docutils.frontend.OptionParser(
-        components=components,
+        components=(docutils.parsers.rst.Parser,),
     ).get_default_values()
     document = docutils.utils.new_document('<rst-doc>', settings=settings)
     parser.parse(text, document)
@@ -327,11 +344,18 @@ class DocstringParser(object):
             if name := self.re_param.findall(field_name):
                 if name in params:
                     raise KeyError('Duplicate parameter!')
-                param = ParameterDoc(
-                    name=name,
-                    description=field.children[0][1].astext(),
-                    type=type,
-                )
+                if name in types:
+                    params[name] = ParameterDoc(
+                        name=name,
+                        description=field.children[0][1].astext(),
+                        type=types[name].type,
+                        default=types[name].default,
+                    )
+                else:
+                    params[name] = ParameterDoc(
+                        name=name,
+                        description=field.children[0][1].astext(),
+                    )
             elif name := self.re_type.findall(field_name):
                 if name in types:
                     raise KeyError('Duplicate parameter type!')
@@ -389,11 +413,41 @@ class DocstringParser(object):
                     )
             # TODO Handle attrs, attr type, returns rtype
 
-            # TODO any unmatched pairs of params and types raises an error
+            # Any unmatched pairs of params and types raises an error
+            if xor_set := set(types) ^ set(params):
+                raise ValueError(' '.join([
+                    'There are unmatched params and types in the docstring:',
+                    f'{xor_set}',
+                ]))
+
+        # TODO Construct the Function/Class docstring.
 
 
         # Return the Docstring Object that stores that docsting info
         raise NotImplementedError()
+
+    def parse_class(
+        self,
+        obj,
+        name=None,
+        obj_type=None,
+        methods=['__init__'],
+    ):
+        """Parse the given class, obtaining its attributes and given functions.
+
+        Args
+        ----
+        obj : object
+            The class object whose docstring and whose methods' docstrings are
+            to be parsed.
+        name : str = None
+            name to assign to this object's ClassDocstring.
+        obj_type : type = None
+        methods : [str] = ['__init__']
+        """
+        # TODO figure out how to either use sphinx or docutils to approriately
+        # parse attribute directives, for now work around it...
+        return
 
     def parse(
         self,
