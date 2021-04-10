@@ -374,10 +374,9 @@ class DocstringParser(object):
 
         return InitialParse(docstring, short_description)
 
-    def parse_func(self, obj, fname=None, obj_type=ValueExists.false):
-        """Parse the docstring of a function."""
+    def _obj_defaults(self, obj, name=None, obj_type=ValueExists.false):
         if isinstance(obj, str):
-            if fname is None:
+            if name is None:
                 raise ValueError('`fname` must be given if `obj` is a `str`.')
             if obj_type is ValueExists.false:
                 raise ValueError(
@@ -386,11 +385,16 @@ class DocstringParser(object):
             docstring = obj
         else:
             docstring =  obj.__doc__
-            if fname is None:
-                fname =  obj.__name__
+            if name is None:
+                name =  obj.__name__
             if obj_type is ValueExists.false:
                 obj_type =  type(obj)
 
+        return docstring, name, obj_type
+
+    def parse_func(self, obj, fname=None, obj_type=ValueExists.false):
+        """Parse the docstring of a function."""
+        docstring, fname, obj_type = self._obj_defaults(obj, fname, obj_type)
         docstring, short_description = self._parse_initial(docstring)
 
         # Use docutils to parse the RST
@@ -511,7 +515,7 @@ class DocstringParser(object):
         self,
         obj,
         name=None,
-        obj_type=None,
+        obj_type=ValueExists.false,
         methods=['__init__'],
     ):
         """Parse the given class, obtaining its attributes and given functions.
@@ -526,7 +530,10 @@ class DocstringParser(object):
         obj_type : type = None
         methods : [str] = ['__init__']
         """
+        docstring, name, obj_type = self._obj_defaults(obj, name, obj_type)
         docstring, short_description = self._parse_initial(docstring)
+
+        # TODO parse all given method docstrings
 
         return
 
