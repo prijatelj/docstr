@@ -1,12 +1,15 @@
 """Code for managing docstring parsing and conversion."""
 from enum import Flag, unique
 from collections import OrderedDict
+from copy imort deepcopy
 from dataclasses import dataclass, InitVar
 from keyword import iskeyword
 import re
 from typing import NamedTuple
 
 import docutils
+from docutils import nodes
+from docutils.parsers import rst
 from sphinx.ext.autodoc import getdoc, prepare_docstring
 from sphinx.ext.napoleon import Config, GoogleDocstring, NumpyDocstring
 
@@ -181,22 +184,22 @@ class ClassDocstring(Docstring):
         self.init_docstring  = init_docstring
 
 
-class AttributeName(docutils.nodes.TextElement):
+class AttributeName(nodes.TextElement):
     """Contains the text of the attribute type."""
     pass
 
 
-class AttributeType(docutils.nodes.TextElement):
+class AttributeType(nodes.TextElement):
     """Contains the text of the attribute type."""
     pass
 
 
-class AttributeBody(docutils.nodes.Structural, docutils.nodes.Element):
+class AttributeBody(nodes.Structural, nodes.Element):
     """Contains the AttributeType and paragraph body of an attribute."""
     pass
 
 
-class AttributeDirective(docutils.parsers.rst.Directive):
+class AttributeDirective(rst.Directive):
     """ReST parser for python class docstring attributes."""
     required_arguments = 1
     optional_arguments = 0
@@ -211,37 +214,41 @@ class AttributeDirective(docutils.parsers.rst.Directive):
 
         node = AttributeBody()
         name_node = AttributeName()
-        name_node += docutils.nodes.Text(self.arguments[0])
+        name_node += nodes.Text(self.arguments[0])
         node += name_node
+
         # Use the type option to create its own node, removing from body.
+        content = deepcopy(self.content)
         pop = None
-        for i, line in enumerate(self.content):
+        for i, line in enumerate(content):
             if ':type:' == line[:6]:
                 type_node = AttributeType()
-                type_node += docutils.nodes.Text(line[6:].strip())
+                type_node += nodes.Text(line[6:].strip())
                 node += type_node
                 pop = i
                 break
-        content = copy
+
         if pop is not None:
-            del self.content[i]
-            offset = self.content_offset - 1
+            del content[i]
         else:
-            offset = self.content_offset
+            raise ValueError('No attribute type for {self.arguments[0]}!')
+            #offset = self.content_offset - 1
+        #else:
+        #    offset = self.content_offset
 
         # Parse the body content as paragraphs
-        para = docutils.nodes.paragraph()
-        self.state.nested_parse(self.content, offset, para)
+        para = nodes.paragraph()
+        self.state.nested_parse(content, self.content_offset, para)
         node += para
 
         return [node]
 
 
-def parse_rst(text: str) -> docutils.nodes.document:
+def parse_rst(text: str) -> nodes.document:
     """Parses given RST text into a docutils document."""
-    parser = docutils.parsers.rst.Parser()
+    parser = rst.Parser()
     settings = docutils.frontend.OptionParser(
-        components=(docutils.parsers.rst.Parser,),
+        components=(rst.Parser,),
     ).get_default_values()
     document = docutils.utils.new_document('<rst-doc>', settings=settings)
     parser.parse(text, document)
@@ -328,7 +335,7 @@ class DocstringParser(object):
         )
 
         # Register AttributeDirective once for this parser.
-        docutils.parsers.rst.directives.register_directive(
+        rst.directives.register_directive(
             'attribute',
             AttributeDirective,
         )
@@ -368,12 +375,12 @@ class DocstringParser(object):
         doc = parse_rst(docstring)
 
         if long_desc_end_idx := doc.first_child_not_matching_class(
-            docutils.nodes.paragraph
+            nodes.paragraph
         ):
             long_description = '\n'.join([ch.astext() for ch in doc.children])
 
         if not (field_list := doc.first_child_not_matching_class(
-            docutils.nodes.field_list
+            nodes.field_list
         )):
             raise ValueError('The given docstring includes no fields!')
 
