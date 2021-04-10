@@ -1,7 +1,7 @@
 """Code for managing docstring parsing and conversion."""
 from enum import Flag, unique
 from collections import OrderedDict
-from copy imort deepcopy
+from copy import deepcopy
 from dataclasses import dataclass, InitVar
 from keyword import iskeyword
 import re
@@ -232,9 +232,6 @@ class AttributeDirective(rst.Directive):
             del content[i]
         else:
             raise ValueError('No attribute type for {self.arguments[0]}!')
-            #offset = self.content_offset - 1
-        #else:
-        #    offset = self.content_offset
 
         # Parse the body content as paragraphs
         para = nodes.paragraph()
@@ -254,6 +251,12 @@ def parse_rst(text: str) -> nodes.document:
     parser.parse(text, document)
 
     return document
+
+
+class InitialParse(NamedTuple):
+    """The results of the parsing of the beginning of a docstring object."""
+    docstring: str
+    short_description: str
 
 
 class DocstringParser(object):
@@ -340,10 +343,8 @@ class DocstringParser(object):
             AttributeDirective,
         )
 
-
-    def parse_func(self, docstring, name):
-        """Parse the docstring of a function."""
-        #docstring = obj.__doc__
+    def _parse_initial(self, docstring):
+        """Internal util for pasring inital portion of docstring."""
         docstring = prepare_docstring(docstring)
 
         # NOTE for now, use what is specified at initialization
@@ -371,13 +372,37 @@ class DocstringParser(object):
 
         docstring = '\n'.join(docstring)
 
+        return InitialParse(docstring, short_description)
+
+    def parse_func(self, obj, fname=None, obj_type=ValueExists.false):
+        """Parse the docstring of a function."""
+        if isinstance(obj, str):
+            if fname is None:
+                raise ValueError('`fname` must be given if `obj` is a `str`.')
+            if obj_type is ValueExists.false:
+                raise ValueError(
+                    '`obj_type` must be given if `obj` is a `str`.'
+                )
+            docstring = obj
+        else:
+            docstring =  obj.__doc__
+            if fname is None:
+                fname =  obj.__name__
+            if obj_type is ValueExists.false:
+                obj_type =  type(obj)
+
+        docstring, short_description = self._parse_initial(docstring)
+
         # Use docutils to parse the RST
         doc = parse_rst(docstring)
 
+        # TODO optionally set how to handle long descriptions for argparse help
         if long_desc_end_idx := doc.first_child_not_matching_class(
             nodes.paragraph
         ):
-            long_description = '\n'.join([ch.astext() for ch in doc.children])
+            long_description = '\n'.join(
+                [ch.astext() for ch in doc.children[:long_desc_end_idx]]
+            )
 
         if not (field_list := doc.first_child_not_matching_class(
             nodes.field_list
@@ -463,7 +488,8 @@ class DocstringParser(object):
                         type=parsed_type,
                         default=default,
                     )
-            # TODO Handle attrs, attr type, returns rtype
+            # TODO Handle returns, rtype: they will be in same field list,
+            # probably
 
             # Any unmatched pairs of params and types raises an error
             if xor_set := set(types) ^ set(params):
@@ -472,11 +498,14 @@ class DocstringParser(object):
                     f'{xor_set}',
                 ]))
 
-        # TODO Construct the Function/Class docstring.
-
-
-        # Return the Docstring Object that stores that docsting info
-        raise NotImplementedError()
+        # Return the Function Docstring Object that stores the docsting info
+        return FuncDocstring(
+            args=params,
+            name=fname,
+            description=long_description,
+            type=obj_type,
+            short_description=short_description,
+        )
 
     def parse_class(
         self,
@@ -497,8 +526,8 @@ class DocstringParser(object):
         obj_type : type = None
         methods : [str] = ['__init__']
         """
-        # TODO figure out how to either use sphinx or docutils to approriately
-        # parse attribute directives, for now work around it...
+        docstring, short_description = self._parse_initial(docstring)
+
         return
 
     def parse(
