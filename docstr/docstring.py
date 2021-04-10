@@ -181,26 +181,64 @@ class ClassDocstring(Docstring):
         self.init_docstring  = init_docstring
 
 
-class Attribute(docutils.nodes.Inline, docutils.nodes.TextElement):
+class AttributeName(docutils.nodes.TextElement):
+    """Contains the text of the attribute type."""
+    pass
+
+
+class AttributeType(docutils.nodes.TextElement):
+    """Contains the text of the attribute type."""
+    pass
+
+
+class AttributeBody(docutils.nodes.Structural, docutils.nodes.Element):
+    """Contains the AttributeType and paragraph body of an attribute."""
     pass
 
 
 class AttributeDirective(docutils.parsers.rst.Directive):
     """ReST parser for python class docstring attributes."""
     required_arguments = 1
-    optional_arguments = 1
+    optional_arguments = 0
     has_content = True
+
     def run(self):
-        return [Attribute(text=self.arguments[0])]
+        # Raise an error if the directive does not have contents.
+        self.assert_has_content()
+
+        print(self.name)
+        print(self.arguments)
+
+        node = AttributeBody()
+        name_node = AttributeName()
+        name_node += docutils.nodes.Text(self.arguments[0])
+        node += name_node
+        # Use the type option to create its own node, removing from body.
+        pop = None
+        for i, line in enumerate(self.content):
+            if ':type:' == line[:6]:
+                type_node = AttributeType()
+                type_node += docutils.nodes.Text(line[6:].strip())
+                node += type_node
+                pop = i
+                break
+        content = copy
+        if pop is not None:
+            del self.content[i]
+            offset = self.content_offset - 1
+        else:
+            offset = self.content_offset
+
+        # Parse the body content as paragraphs
+        para = docutils.nodes.paragraph()
+        self.state.nested_parse(self.content, offset, para)
+        node += para
+
+        return [node]
 
 
 def parse_rst(text: str) -> docutils.nodes.document:
     """Parses given RST text into a docutils document."""
-    docutils.parsers.rst.directives.register_directive(
-        'attribute',
-        AttributeDirective,
-    )
-
     parser = docutils.parsers.rst.Parser()
     settings = docutils.frontend.OptionParser(
         components=(docutils.parsers.rst.Parser,),
@@ -288,6 +326,13 @@ class DocstringParser(object):
             f'\.\.[ \t]*attribute[ \t]*::{name_pattern}[ \t]*\n{doc_pattern}',
             re.S,
         )
+
+        # Register AttributeDirective once for this parser.
+        docutils.parsers.rst.directives.register_directive(
+            'attribute',
+            AttributeDirective,
+        )
+
 
     def parse_func(self, docstring, name):
         """Parse the docstring of a function."""
