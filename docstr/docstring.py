@@ -611,3 +611,5 @@ class DocstringParser(object):
             #return ClassDocstring(name, obj_type, description, )
 
         return self.parse_func(obj.__doc__, name)#, obj_type)
+
+# TODO Hierarchical Configuration Class given parsed docstring objects.
