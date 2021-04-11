@@ -167,18 +167,19 @@ class ClassDocstring(Docstring):
     methods : {str: FuncDocstring} = None
 
     def __post_init__(self, attributes, init_docstring):
-        if attributes is None:
-            raise TypeError(' '.join([
-                'ClassDocstring() missing 1 required positional argument:',
-                '`attributes` Provide via keyword, if able to through',
-                'position.',
-            ]))
+        # TODO attributes are unnecessary for config. uses init or load.
+        #if attributes is None:
+        #    raise TypeError(' '.join([
+        #        'ClassDocstring() missing 1 required positional argument:',
+        #        '`attributes` Provide via keyword, if unable to through',
+        #        'position.',
+        #    ]))
         self.attributes  = attributes
 
         if init_docstring is None:
             raise TypeError(' '.join([
                 'ClassDocstring() missing 1 required positional argument:',
-                '`init_docstring` Provide via keyword, if able to through',
+                '`init_docstring` Provide via keyword, if unable to through',
                 'position.',
             ]))
         self.init_docstring  = init_docstring
@@ -270,6 +271,16 @@ class DocstringParser(object):
     config : sphinx.ext.napoleon.Config = None
     """
     def __init__(self, style, doc_linking=False, config=None):
+        """
+        Args
+        ----
+        style : {'rst', 'numpy', 'google'}
+            The style expected to parse.
+        doc_linking : bool = False
+            Not Implemented Yet
+        config : sphinx.ext.napoleon.Config = None
+            Not Implemented Yet
+        """
         if (style := style.lower()) not in {'rst', 'numpy', 'google'}:
             raise ValueError(
                 "Expected `style` = 'rst', 'numpy', or 'google', not `{style}`"
