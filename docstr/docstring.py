@@ -396,6 +396,10 @@ class DocstringParser(object):
             docstring = obj
         else:
             docstring =  obj.__doc__
+            if docstring is None:
+                raise ValueError(
+                    'The docstring of object `{obj}` does not exist.'
+                )
             if name is None:
                 name =  obj.__name__
             if obj_type is ValueExists.false:
@@ -527,7 +531,7 @@ class DocstringParser(object):
         obj,
         name=None,
         obj_type=ValueExists.false,
-        methods=['__init__'],
+        methods=None,
     ):
         """Parse the given class, obtaining its attributes and given functions.
 
@@ -539,23 +543,75 @@ class DocstringParser(object):
         name : str = None
             name to assign to this object's ClassDocstring.
         obj_type : type = None
-        methods : [str] = ['__init__']
+        methods : [str] = None
+            Additional methods whose docstrings are to be parsed.
         """
         docstring, name, obj_type = self._obj_defaults(obj, name, obj_type)
         docstring, short_description = self._parse_initial(docstring)
 
-        # TODO parse all given method docstrings
+        # Obtain the long_description of the class.
+        if first_section := self.re_section.search(docstring):
+            # Extract the text from beginning to first section
+            long_description = docstring[:first_section.span()[0]]
+        else:
+            # There are no sections in the class docstring, so it is all desc.
+            long_description = docstring
 
-        return
+        # TODO parse Attributes, optional, unless a dataclass or dataclass-like
+
+        # Obtain the class' __init__ docstring
+        init_obj = getattr(obj, '__init__')
+        if init_obj.__doc__ is None:
+            # TODO if __init__ does not have a docstring or no args but
+            # Attributes does and the attribute names match the init's arg
+            # names, then simply use the attribute docstrings as the args,
+            # assuming it is like a dataclass w/ generated init.
+
+            # TODO Related, allow for only partially defined args if the others
+            # are like dataclass values (when actually a dataclass, able to be
+            # checked. This check could include if the arg is used to assign to
+            # the attribute without any change to its value (attrib = arg).
+            raise NotImplementedError(
+                'init w/o docstrings are not supported yet.'
+            )
+        else:
+            init_docstr = self.parse_func(init_obj)
+
+        # Parse all given method docstrings
+        if methods:
+            method_docstrs = {}
+            for method in methods:
+                if not hasattr(obj, method):
+                    raise KeyError(f'`obj` `{obj}` does not have method {method}')
+
+                method_obj = getattr(obj, method)
+                if not callable(method_obj):
+                    raise TypeError(
+                        f'`{obj}.{method}` is not callable: {method_obj}`'
+                    )
+
+                method_docstrs[method] = self.parse_func(method_obj)
+        else:
+            method_docstrs = None
+
+        return ClassDocstring(
+            attributes=None,
+            init_docstring=init_docstr,
+            methods=method_docstrs,
+            name=name,
+            description=long_description,
+            type=obj_type,
+            short_description=short_description,
+        )
 
     def parse(
         self,
         obj,
-        style=None,
-        doc_linking=False,
         name=None,
         obj_type=None,
-        func_list=None
+        methods=None,
+        style=None,
+        doc_linking=False,
     ):
         """
         Args
@@ -564,14 +620,6 @@ class DocstringParser(object):
             The object whose __doc__ is to be parsed. If a str object of the
             docstring, then the `name` and `obj_type` parameters must be
             provided.
-        style : str, default None
-            Expected docstring style determining how to parse the docstring.
-        doc_linking : bool, default False
-            Linked docstring whose content applies to this docstring and will
-            be parsed recursively.
-
-            TODO Add whitelisting of which packages to allow recursive doc
-            linking
         name : str, optional
             The name of the object whose docstring is being parsed. Only needs
             to be supplied when the `obj` is a `str` of the docstring to be
@@ -580,10 +628,18 @@ class DocstringParser(object):
             The type of the object whose docstring is being parsed. Only needs
             to be supplied when the `obj` is a `str` of the docstring to be
             parsed, otherwies not used.
-        func_list : [str], optional
+        methods : [str], optional
             A list of method names whose docstrings are all to be parsed and
             returned in a hierarchical manner encapsulating the hierarchical
             docstring of a class.  Only used when `obj` is a class object.
+        style : str, default None
+            Expected docstring style determining how to parse the docstring.
+        doc_linking : bool, default False
+            Linked docstring whose content applies to this docstring and will
+            be parsed recursively.
+
+            TODO Add whitelisting of which packages to allow recursive doc
+            linking
 
         Returns
         -------
@@ -592,6 +648,8 @@ class DocstringParser(object):
             or a ClassDocstring which contains the Docstring objects of the
             methods of the class along with the class' parsed Docstring object.
         """
+        raise NotImplementedError('Use `parse_class()` or `parse_func()`')
+
         # TODO optionally parallelize the parsing, perhaps with Ray?
         if isinstance(obj, str):
             if name is None or obj_type is None:
