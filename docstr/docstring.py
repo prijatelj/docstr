@@ -7,6 +7,7 @@ from keyword import iskeyword
 import re
 from typing import NamedTuple
 
+import configargparse
 import docutils
 from docutils import nodes
 from docutils.parsers import rst
@@ -183,6 +184,19 @@ class ClassDocstring(Docstring):
                 'position.',
             ]))
         self.init_docstring  = init_docstring
+
+    def get_parser(self):
+        """Creates the argparser from the contents of the ClassDocstring."""
+        parser = configargparse.ArgParser(
+            prog=self.name,
+            description=self.short_description,
+        )
+
+        # TODO set name, description
+
+        # TODO set args from __init__
+
+        return parser
 
 
 class AttributeName(nodes.TextElement):
@@ -680,5 +694,3 @@ class DocstringParser(object):
             #return ClassDocstring(name, obj_type, description, )
 
         return self.parse_func(obj.__doc__, name)#, obj_type)
-
-# TODO Hierarchical Configuration Class given parsed docstring objects.
