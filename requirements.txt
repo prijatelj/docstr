@@ -1,3 +1,4 @@
 sphinx
+#ConfigArgParse
 #ConfigArgParse[config]
 #pydantic[typing]
