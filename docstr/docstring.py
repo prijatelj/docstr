@@ -74,6 +74,7 @@ class VariableDoc:
 class ParameterDoc(VariableDoc):
     """Dataclass for parameters in docstrings."""
     default : InitVar[object] = ValueExists.false
+    choices : object = ValueExists.false
 
     def __post_init__(self, default):
         # TODO generalize this by extending InitVar to perform this in init.
@@ -90,6 +91,38 @@ class ParameterDoc(VariableDoc):
                 '`default` Provide via keyword, if able to through position.',
             ]))
         self.default = default
+
+    def update_parser(self, parser, prefix=None):
+        # TODO I predict the prefix will be necessary to make a hierarch parser
+        #   Unless, the parser object handles this itself, which I will
+        #   probably have to make it do to keep the code clean and to be able
+        #   to parse YAML with ConfigArgParse.
+
+        # TODO need to handle lists, array likes, etc... (note append for
+        # config parse), so then maybe not `nargs=+`?
+        parser.add_argument(
+            f'--{self.name}',
+            default=None if self.default is ValueExists.false else self.default,
+            # TODO choices= informed by type in numpy being a set of things.
+            # The type is then informed by the set's elements, if not provided.
+            help=self.description,
+            # TODO Probably need a handler for some common objects?
+            type=str if self.type is ValueExists.false else self.type,
+            dest=f'{prefix}.{self.name}' if prefix else f'{self.name}',
+        )
+
+        # TODO need to handle `required` args, when they are positional args w/
+        # no defaults, which means their value must be given.
+
+        # TODO will probably have to handle certain action classes based on
+        # type, defaults, and choices. e.g. Boolean only options w/ defaults.
+
+        # TODO handle multi_typed_args (default type becomes a param here.)
+        #   TODO perhaps in this case allow the user to specify the type of the
+        #   parsed arg, if not apparent.
+
+        # TODO check arg value to check arg dependencies on the value of other
+        # args.
 
 
 @dataclass
@@ -157,6 +190,26 @@ class FuncDocstring(Docstring):
         """
         raise NotImplementedError()
 
+    def get_parser(self, parser=None):
+        if parser is None:
+            parser = configargparse.ArgParser(
+                prog=self.name,
+                description=self.short_description,
+            )
+        else:
+            parser = parser.add_argument_group(
+                self.name,
+                self.short_description,
+            )
+
+        for arg in self.args:
+            arg.add_to_parser
+            parser.add_agument(
+                f'--'
+            )
+
+        return parser
+
 
 @dataclass
 class ClassDocstring(Docstring):
@@ -185,12 +238,23 @@ class ClassDocstring(Docstring):
             ]))
         self.init_docstring  = init_docstring
 
-    def get_parser(self):
+    def get_parser(self, parser=None):
         """Creates the argparser from the contents of the ClassDocstring."""
-        parser = configargparse.ArgParser(
-            prog=self.name,
-            description=self.short_description,
-        )
+        # TODO set args from __init__
+        if parser is None:
+            parser = configargparse.ArgParser(
+                prog=self.name,
+                description=self.short_description,
+            )
+        else:
+            parser = parser.add_argument_group(
+                self.name,
+                self.short_description,
+            )
+
+        init_parser = self.init_docstring.get_parser(parser)
+
+
 
         # TODO set name, description
 
