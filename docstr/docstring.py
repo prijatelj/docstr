@@ -339,7 +339,7 @@ class InitialParse(NamedTuple):
 
 
 class DocstringParser(object):
-    """Docstring parsing.
+    """Docstring parser for a specific style and parser config.
 
     Attributes
     ----------
@@ -464,6 +464,29 @@ class DocstringParser(object):
         return InitialParse(docstring, short_description)
 
     def _obj_defaults(self, obj, name=None, obj_type=ValueExists.false):
+        """Given the object and optionally its information, return the object's
+        docstring, name, and object type.
+
+        Args
+        ----
+        obj : object | str
+            The object whose __doc__ is to be parsed. If a str object of the
+            docstring, then the `name` and `obj_type` parameters must be
+            provided.
+        name : str, optional
+            The name of the object whose docstring is being parsed. Only needs
+            to be supplied when the `obj` is a `str` of the docstring to be
+            parsed, otherwies not used.
+        obj_type : type, optional
+            The type of the object whose docstring is being parsed. Only needs
+            to be supplied when the `obj` is a `str` of the docstring to be
+            parsed, otherwies not used.
+
+        Returns
+        -------
+        (str, str, type)
+            A tuple of docstring, object name, and object type.
+        """
         if isinstance(obj, str):
             if name is None:
                 raise ValueError('`fname` must be given if `obj` is a `str`.')
@@ -486,7 +509,23 @@ class DocstringParser(object):
         return docstring, name, obj_type
 
     def parse_func(self, obj, fname=None, obj_type=ValueExists.false):
-        """Parse the docstring of a function."""
+        """Parse the docstring of a function.
+
+        Args
+        ----
+        obj : object | str
+            The object whose __doc__ is to be parsed. If a str object of the
+            docstring, then the `name` and `obj_type` parameters must be
+            provided.
+        fname : str, optional
+            The name of the object whose docstring is being parsed. Only needs
+            to be supplied when the `obj` is a `str` of the docstring to be
+            parsed, otherwies not used.
+        obj_type : type, optional
+            The type of the object whose docstring is being parsed. Only needs
+            to be supplied when the `obj` is a `str` of the docstring to be
+            parsed, otherwies not used.
+        """
         docstring, fname, obj_type = self._obj_defaults(obj, fname, obj_type)
         docstring, short_description = self._parse_initial(docstring)
 
@@ -691,7 +730,8 @@ class DocstringParser(object):
         style=None,
         doc_linking=False,
     ):
-        """
+        """General parsing of a given object with a __docstr__ attribute.
+
         Args
         ----
         obj : object | str
