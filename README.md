@@ -13,11 +13,6 @@ The objective of docstr is to make use of properly written docstrings that would
 - Efficiency
     - efficient coding and execution
 
-### Verisoning
-
-Docstr uses [Semantic Versioning 2.0.0](https://semver.org/spec/v2.0.0.html).
-Docstr's version will remain < 1.0.0 until adequate unit test coverage exists.
-
 #### Desired Features for Version 1
 
 The following are desired features for a complete docstr version 1.0.0:
@@ -44,6 +39,15 @@ The following are desired features for a complete docstr version 1.0.0:
         - This is specifically useful to Machine Learning (ML) researchers, but may be nice for those who either want to exhaustively run variations of their pipeline or have some objective function they want to optimize over different variations of their pipeline.
         - in ML, the pipeline and its parameter search would be entirely contained all in one yaml file, or multiple through optoinal config linking.
             This would result in a straightforward overview of the ML experiment pipeline, easily swapped with existing modules written in code as classes.
+    - Possibly rely upon Apache AirFlow DAG for the pipelining.
+        - `dag-factory` : AirFlow extension to make dynamic
+        - alternative to AirFlow is `dagster`
+    - Given an object whose doc string is fully parsed by docstr, output the template of the YAML config file to be editted.
+
+### Verisoning
+
+Docstr uses [Semantic Versioning 2.0.0](https://semver.org/spec/v2.0.0.html).
+Docstr's version will remain < 1.0.0 until adequate unit test coverage exists.
 
 ### License
 
