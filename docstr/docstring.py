@@ -36,6 +36,11 @@ from sphinx.ext.napoleon import Config, GoogleDocstring, NumpyDocstring
 # output Docstring Object to str of RST and then optionally convert to Google
 # or Numpy.
 
+# TODO note that Factories or module level function that load classes need
+# handeld by parsing their docstrings... when automating the loading of
+# classes. Just keep it in mind, and note that Factories make sense when the
+# sub classes, say a bunch of different torch.modules or tf.keras.models
+
 @unique
 class ValueExists(Flag):
     """Enum for standing in for a non-existent default value."""
