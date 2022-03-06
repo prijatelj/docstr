@@ -43,11 +43,13 @@ class ValueExists(Flag):
 class MultiType(object):
     """A list of multiple types for when a variable may take multiple types."""
     def __init__(self, types):
-        if not isinstance(types, list) and not isinstance(types, tuple):
+        try:
+            self.types = tuple(types)
+        except TypeError as e:
             raise TypeError(
-                f'types must be a list or tuple, not: {type(types)}'
-            )
-        self.types = types
+                f'`types` must be a `tuple`, not: {type(types)}'
+            ).with_traceback(e.__traceback__)
+
 
 
 # Docstring object that contains the parts of the docstring post parsing
