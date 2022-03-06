@@ -62,26 +62,26 @@ class MultiType(object):
 # TODO For each of these dataclasses, make them tokenizers for their respective
 # parts of the docstring and string call them during parsing
 @dataclass
-class VariableDoc:
-    """Dataclass for return objects in docstrings."""
-    name : InitVar[str]
+class BaseDoc:
+    """Dataclass for the base components of every parsed docstring object."""
+    name : str
     description : str
     type : type = ValueExists.false
 
-    def __post_init__(self, name):
-        if name.isidentifier() and not iskeyword(name):
-            self.name = name
-        else:
-            raise ValueError(f'`name` is an invalid variable name: `{name}`')
-
 
 @dataclass
-class ParameterDoc(VariableDoc):
+class ParameterDoc(BaseDoc):
     """Dataclass for parameters in docstrings."""
     default : InitVar[object] = ValueExists.false
     choices : object = ValueExists.false
 
     def __post_init__(self, default):
+        # Check if a valid name identifier for parameter (variable)
+        if name.isidentifier() and not iskeyword(name):
+            self.name = name
+        else:
+            raise ValueError(f'`name` is an invalid variable name: `{name}`')
+
         # TODO generalize this by extending InitVar to perform this in init.
         # Default the "empty" value to None, possibly removing need to specify
         # `= None` in the dataclass part. Just to expedite this cuz it is now
@@ -131,8 +131,8 @@ class ParameterDoc(VariableDoc):
 
 
 @dataclass
-class Docstring(VariableDoc):
-    """Docstring components.
+class Docstring(BaseDoc):
+    """The docstring components of a fully parsed `__doc__`.
 
     Attributes
     ----------
@@ -156,7 +156,7 @@ class Docstring(VariableDoc):
 
 @dataclass
 class FuncDocstring(Docstring):
-    """Function docstring components.
+    """The docstring components of a fully parsed function's `__doc__`.
 
     Attributes
     ----------
@@ -167,7 +167,7 @@ class FuncDocstring(Docstring):
     """
     args : InitVar[OrderedDict({str : ParameterDoc})] = None
     other_args : OrderedDict({str : ParameterDoc}) = None # TODO implement parsing
-    return_doc : VariableDoc = ValueExists.false
+    return_doc : BaseDoc = ValueExists.false
 
     def __post_init__(self, args):
         if args is None:
@@ -218,8 +218,9 @@ class FuncDocstring(Docstring):
 
 @dataclass
 class ClassDocstring(Docstring):
-    """The multiple Docstrings the make up a class, including at least the
-    class' docstring and the __init__ method's docstring.
+    """The docstring components of a fully parsed class's `__doc__`.
+    This consists of multiple `Docstrings` that make up a class, including at
+    least the class' docstring and the __init__ method's docstring.
     """
     attributes : InitVar[OrderedDict({str : ParameterDoc})] = None
     init_docstring : InitVar[FuncDocstring] = None
