@@ -1,4 +1,5 @@
-from setuptools import setup
+"""Setup script. install using `pip install -e .` when at repo's root dir."""
+from setuptools import setup, find_packages
 import re
 
 def get_property(prop, project):
@@ -22,9 +23,7 @@ setup(
     version=get_property('__version__', project_name),
     author='Derek S. Prijatelj',
     author_email='dprijate@nd.edu',
-    packages=[
-        project_name,
-    ],
+    packages=[f'{project_name}.{pkg}' for pkg in find_packages(project_name)],
     #scripts
     description=' '.join([
         'Docstring parsing for generating argument and config parsers and',
