@@ -50,9 +50,14 @@ class MultiType(object):
                 f'`types` must be a `tuple`, not: {type(types)}'
             ).with_traceback(e.__traceback__)
 
+    def check(self, objs):
+        raise NotImplementedError('Consider pydantic? or extend argparse')
+        # TODO for this to be worth an object, type checking/handling needs
+        # implemented, but tbh, perhaps this does not to be an object anyways
+        # due to stores tuple and would implement a single method that would
+        # take object and tuple types?
 
 
-# Docstring object that contains the parts of the docstring post parsing
 # TODO For each of these dataclasses, make them tokenizers for their respective
 # parts of the docstring and string call them during parsing
 @dataclass
@@ -65,7 +70,7 @@ class BaseDoc:
 
 @dataclass
 class ArgDoc(BaseDoc):
-    """Dataclass for parameters in docstrings."""
+    """Dataclass for an argument/parameter in docstrings."""
     default : InitVar[object] = ValueExists.false
     choices : object = ValueExists.false
 
@@ -84,7 +89,7 @@ class ArgDoc(BaseDoc):
         # something similar-ish. Moreso generate the code snippet in the
         # generated __init__(). could possibly even reorder positional args
         # based on the order of inheritance.
-        if default is None:
+        if default is None: # TODO Wait what is wrong here???
             raise TypeError(' '.join([
                 'ArgDoc() missing 1 required positional argument:',
                 '`default` Provide via keyword, if able to through position.',
