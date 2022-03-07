@@ -2,6 +2,24 @@
 # TODO make Numpy and Google exhaustive examples that get converted
 
 
+def numpy_doc_func(foo, bar):
+    """This is the short desc. of the function, concat the paired strings
+
+    Args
+    ----
+    foo : str
+        Foo is an excellently documented string argument.
+    bar : str
+        Bar is an excellently documented string argument.
+
+    Returns
+    -------
+    str
+        An incredible ordered concatenation of the paired string inputs.
+    """
+    return foo + bar
+
+
 class NumpyDocClass(object):
     """This is an example class with Numpy docstrings. Short description ends.
     This is the beginning of the long descriptions, which can essentially be
@@ -55,7 +73,7 @@ class NumpyDocClass(object):
         self.c = c
         self.z = float(z)
 
-    def foo(self,):
+    def foo(self, oh, my):
         """The foo function performs Tom foo-ery. Heh heh.
         However the long description of `foo()` is longer than the short
         description but still not too long to be cumbersome.
@@ -66,12 +84,17 @@ class NumpyDocClass(object):
 
         Args
         ----
+        oh : str
+            First word in the paired concatenation of string inputs.
+        my : str
+            Second word in the paired concatenation of string inputs.
 
         Returns
         -------
+        str
+            Concatenate `oh` and `my` in that order.
         """
-
-        return
+        return oh + my
 
 
 class NumpyDocClassLinking(NumpyDocClass):
@@ -79,7 +102,7 @@ class NumpyDocClassLinking(NumpyDocClass):
 
     Attributes
     ----------
-    example_var :
+    example_var : object
     is_this_correct : bool = False
 
     Other Attributes
@@ -87,9 +110,11 @@ class NumpyDocClassLinking(NumpyDocClass):
     see `NumpyDocClass`
     """
     def __init__(self, example_var, is_this_correct=False, *args, **kwargs):
-        """
+        super(self).__init__(*args, **kwargs)
 
-        """
+        # NO docstring, still fine to support, perhaps docstr logs a warning.
+        self.example_var = example_var
+        self.is_this_correct = is_this_correct
 
     def bar(self, oh, my):
         """Same args as foo, but performs a different operation.
@@ -106,14 +131,14 @@ class NumpyDocClassLinking(NumpyDocClass):
 
         Returns
         -------
-        see `NumpyDocClass.foo`
+        str
+            Concatenate `my` and `oh` in that order.
         """
+        return my + oh
 
-        return
 
-
-class NumpyDocClassRecursiveLinking(NumpyDocLinkingClass):
-    """A Numpy example class that uses recursive docstring linking of depth 2
+class NumpyDocClassMultiLinking(NumpyDocLinkingClass):
+    """A Numpy example class that uses multiple docstring linking of depth 2
     links.
 
     An example of linking text from the long description of another docstring:
@@ -131,7 +156,7 @@ class NumpyDocClassRecursiveLinking(NumpyDocLinkingClass):
 
     Attributes
     ----------
-    custom_obj_instance : object = None
+    custom_obj_instance : NumpyDocClass
         An example of recusrive linking without `see namespace` that allows for
         specifying a custom class as the type and then recursively parsing that
         object, if desired, to make a complete configargparser w/ hierarchical
@@ -142,18 +167,14 @@ class NumpyDocClassRecursiveLinking(NumpyDocLinkingClass):
     just_for_me : bool = True
     see `NumpyDocClass`
     """
-    def __init__(self, just_for_me=True, *args, **kwargs):
-        """
-        Args
-        ----
-        see `NumpyDocClassLinking`
-        """
+    def __init__(self, custom_obj_instance, just_for_me=True, *args, **kwargs):
+        custom_obj_instance = self.custom_obj_instance
         self.just_for_me = just_for_me
         super(self, NumpyDocLinkingClass).__init__(*args, **kwargs)
 
 
 # TODO dataclass example (Splat Extention is the dataclass example)
-# TODO docstr.splat_extention(type_checking=True)
+# TODO docstr.meta.splat_extention(type_checking=True)
 class NumpyDocClassSplatExtention(NumpyDocClassRecursiveLinking):
     """A Numpy example class that uses docstr's Splat Extention.
     Splat Extension reduces redundant coding by allowing the programmer to
@@ -247,6 +268,8 @@ class NumpyDocClassSplatExtention(NumpyDocClassRecursiveLinking):
             class_specific_value_2,
         )
 
-    # docstr.splat_extention(type_checking=True) TODO necessary?
+    # docstr.meta.splat_extention(type_checking=True) TODO necessary?
     def bar(self, *args, **kwargs):
+        """Method overrides parent and the params are expanded by docstr.meta
+        """
         return
