@@ -260,7 +260,6 @@ class ClassDocstring(Docstring):
         init_parser = self.init_docstring.get_parser(parser)
 
 
-
         # TODO set name, description
 
         # TODO set args from __init__
