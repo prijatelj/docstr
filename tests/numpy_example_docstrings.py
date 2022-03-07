@@ -268,8 +268,19 @@ class NumpyDocClassSplatExtention(NumpyDocClassRecursiveLinking):
             class_specific_value_2,
         )
 
-    # docstr.meta.splat_extention(type_checking=True) TODO necessary?
+    #docstr.meta.splat_extention(type_checking=True) TODO necessary?
     def bar(self, *args, **kwargs):
         """Method overrides parent and the params are expanded by docstr.meta
+
+        Args
+        ----
+        players : int
+        blitzball : bool = False
+
+        Returns
+        -------
+        bool
+            The games' result, whether not blitzball (default) or blitzball.
+            True is a win, False is a loss.
         """
-        return
+        return blitzball or players > 1
