@@ -13,6 +13,32 @@ The objective of docstr is to make use of properly written docstrings that would
 - Efficiency
     - efficient coding and execution
 
+#### Docstr Pipeline Use
+
+1. Give objects whose docstrings are to be parsed
+    - pass those objects as args to a function
+    - Decorate those objects with a docstr decorator
+    - point to those objects via namespace in a configuration file
+2. **Parse** the object's docstrings, possibly in a hierarchical fashion if multiple.
+    - dependent on docutils and sphinx for conversion of styles to rst
+    - uses regex for parsing and tokenizing the docstrings
+3. **Tokenize**: The resulting tokens of parsing
+    - Syntax check the docstrings to ensure properly written
+        - may be done live during the parsing process, or afterwards.
+    - Optionally syntax check the docstrings to the objects to ensure they match expectations, e.g., the args in doc are as they are expected by a function.
+    - tokenized docstrings enable colorized docstrings in editors.
+    - The tokenized objects need to be in a useful enough and general enough format that enables ease of integration into down-stream "compile" software, such as pydantic for type checking, or ConfigArgParse for CLI and config parsers.
+4. "**Compile**": Using the tokens, perform operations
+    - Command Line Interface: argparse auto creation
+    - Configuration file parser: ConfigArgParse auto creation
+        - Enables Pipeline running of code if docstr is used on a class that has a run() or main().
+            - may hook into or rely upon: Dagster, ray, asyncio
+    - Meta-programming (Reflection)
+        - enabling type checking versions of the parsed code. (pydantic?)
+        - splat extension for "write once".
+            If docstr parsed, may automatically generate the boiler plate code based on the parsed docstring, thus reducing writing redundancy.
+                - May require linters (pylint, flake8) to acknowledge this.
+
 #### Desired Features for Version 1
 
 The following are desired features for a complete docstr version 1.0.0:
