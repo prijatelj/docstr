@@ -38,6 +38,7 @@ The objective of docstr is to make use of properly written docstrings that would
         - splat extension for "write once".
             If docstr parsed, may automatically generate the boiler plate code based on the parsed docstring, thus reducing writing redundancy.
                 - May require linters (pylint, flake8) to acknowledge this.
+        - docstr.meta.dataclass : make any class a dataclass given correct docstring
 
 #### Desired Features for Version 1
 
