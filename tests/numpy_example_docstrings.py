@@ -54,7 +54,7 @@ class NumpyDocClass(object):
         """
         Args
         ----
-        name : see Attr
+        name : see self
         a : int | float
             First number in summation.
         b : int | float
@@ -68,7 +68,7 @@ class NumpyDocClass(object):
             docstr could be applied to these cases. Docstr is intended to allow
             modifcation to their parsing regexes such that custom support for
             niche user cases may be handled by the user.
-        z : see Attr
+        z : see self
         """
         self.name = name
         self.a_plus_b = a + b
