@@ -23,6 +23,7 @@ def expected_class_of_primitives():
         'z',
         float,
         'Foo is an excellently documented string argument.',
+        3.14159,
     )
     int_float = MultiType({int, float}),
 
@@ -68,11 +69,13 @@ def expected_class_of_primitives():
                     'x',
                     int_float,
                     'Foo is an excellently documented string argument.',
+                    8,
                 ),
                 y=docstring.ArgDoc(
                     'y',
                     int_float,
                     'Foo is an excellently documented string argument.',
+                    11,
                 ),
                 z=z_doc,
             ),
