@@ -55,6 +55,7 @@ The following are desired features for a complete docstr version 1.0.0:
     `def func(*args, **kwargs):` to avoid redundant writing of args, defaults, etc.
 - Decorator for optional type-checking of variables values at runtime to the
   docstring's preset values.
+    - Notably, "protected" attributes may be marked as such in the docs and so the user doesn't have to write @property variable name reutrn protected \_variable.
 - Comprehensive unit tests to ensure everything functions as expected.
     - Along with basic CI/CD on github to check build status.
 - Hierarchical pipeline support as specified by a yaml config file
