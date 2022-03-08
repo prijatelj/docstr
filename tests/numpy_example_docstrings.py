@@ -20,6 +20,42 @@ def numpy_doc_func(foo, bar):
     return foo + bar
 
 
+def numpy_doc_func_defaults(foo, bar='bar'):
+    """This is the short desc. of the function, concat the paired strings
+
+    Args
+    ----
+    foo : str = 'foo'
+        Foo is an excellently documented string argument.
+    bar : str = 'bar'
+        Bar is an excellently documented string argument.
+
+    Returns
+    -------
+    str
+        An incredible ordered concatenation of the paired string inputs.
+    """
+    return foo + bar
+
+
+def numpy_doc_func_choices(foo='foo', bar='bar'):
+    """This is the short desc. of the function, concat the paired strings
+
+    Args
+    ----
+    foo : 'foo' | 'bar' = 'foo'
+        Foo is an excellently documented string argument.
+    bar : 'foo' | 'bar' = 'bar'
+        Bar is an excellently documented string argument.
+
+    Returns
+    -------
+    str
+        An incredible ordered concatenation of the paired string inputs.
+    """
+    return foo + bar
+
+
 class NumpyDocClass(object):
     """This is an example class with Numpy docstrings. Short description ends.
     This is the beginning of the long descriptions, which can essentially be
