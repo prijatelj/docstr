@@ -122,10 +122,5 @@ class TestParseClassPrimitives(TestParseFunc):
         init arg inherent pass through, which only works when not using meta splat
         expansion.
         """
-        # Create the expected result of docstring.
-
-        # Decide if parser is function or class object.
         parsed = parse(examples.NumpyDocClass)
-
-        # Comparison supported betweend the docstr.docstring classes.
         assert expected == parsed
