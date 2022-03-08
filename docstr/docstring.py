@@ -1,4 +1,7 @@
-"""Object oriented design of representation of docstrings and their parts."""
+"""Object oriented design of tokenized representation of docstrings.
+After parsing the docstrings, the result are these token objects filled out.
+From these tokens, syntax checking as well as "compile" actions may occur.
+"""
 from enum import Flag, unique
 from collections import OrderedDict
 from dataclasses import dataclass, InitVar
@@ -64,8 +67,8 @@ class MultiType(object):
 class BaseDoc:
     """Dataclass for the base components of every parsed docstring object."""
     name : str
-    description : str
     type : type = ValueExists.false
+    description : str = ValueExists.false
 
 
 @dataclass
@@ -135,22 +138,15 @@ class Docstring(BaseDoc):
 
     Attributes
     ----------
-    short_description : str
-        The short description of the docstring.
     args : str
         The function's Arguments/Args or the class' Attributes.
     """
-    short_description : InitVar[str] = None
+    #short_description : InitVar[str] = None
     other_sections: OrderedDict({str : str}) = None
 
-    def __post_init__(self, short_description):
-        if short_description is None:
-            raise TypeError(' '.join([
-                'Docstring() missing 1 required positional argument:',
-                '`short_description` Provide via keyword, if able to through',
-                'position.',
-            ]))
-        self.short_description  = short_description
+    @property
+    def short_description(self):
+        return self.description.partition('\n')[0]
 
 
 @dataclass
@@ -159,22 +155,20 @@ class FuncDocstring(Docstring):
 
     Attributes
     ----------
-    short_description : str
-        The short description of the docstring.
     args : str
         The function's Arguments/Args or the class' Attributes.
     """
-    args : InitVar[OrderedDict({str : ArgDoc})] = None
+    args : OrderedDict({str : ArgDoc}) = None
     other_args : OrderedDict({str : ArgDoc}) = None # TODO implement parsing
     return_doc : BaseDoc = ValueExists.false
 
-    def __post_init__(self, args):
-        if args is None:
-            raise TypeError(' '.join([
-                'FuncDocstring() missing 1 required positional argument:',
-                '`args` Provide via keyword, if able to through position.',
-            ]))
-        self.args  = args
+    #def __post_init__(self, args):
+    #    if args is None:
+    #        raise TypeError(' '.join([
+    #            'FuncDocstring() missing 1 required positional argument:',
+    #            '`args` Provide via keyword, if able to through position.',
+    #        ]))
+    #    self.args  = args
 
     def get_str(self, style):
         """Returns the docstring as a string in the given style. Could simply
@@ -221,19 +215,13 @@ class ClassDocstring(Docstring):
     This consists of multiple `Docstrings` that make up a class, including at
     least the class' docstring and the __init__ method's docstring.
     """
-    attributes : InitVar[OrderedDict({str : ArgDoc})] = None
-    init_docstring : InitVar[FuncDocstring] = None
+    attributes : OrderedDict({str : ArgDoc}) = None
+    init : InitVar[FuncDocstring] = None
     methods : {str: FuncDocstring} = None
 
-    def __post_init__(self, attributes, init_docstring):
-        # TODO attributes are unnecessary for config. uses init or load.
-        #if attributes is None:
-        #    raise TypeError(' '.join([
-        #        'ClassDocstring() missing 1 required positional argument:',
-        #        '`attributes` Provide via keyword, if unable to through',
-        #        'position.',
-        #    ]))
-        self.attributes  = attributes
+    def __post_init__(self, init_docstring):
+        # TODO attributes are unnecessary for bare min config. uses init or
+        # load-like function, but is useful for type checking.
 
         if init_docstring is None:
             raise TypeError(' '.join([
