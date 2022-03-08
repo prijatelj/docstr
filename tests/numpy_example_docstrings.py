@@ -54,6 +54,7 @@ class NumpyDocClass(object):
         """
         Args
         ----
+        name : see Attr
         a : int | float
             First number in summation.
         b : int | float
@@ -67,7 +68,9 @@ class NumpyDocClass(object):
             docstr could be applied to these cases. Docstr is intended to allow
             modifcation to their parsing regexes such that custom support for
             niche user cases may be handled by the user.
+        z : see Attr
         """
+        self.name = name
         self.a_plus_b = a + b
         self.x_times_b = float(x * y)
         self.c = c
@@ -174,7 +177,7 @@ class NumpyDocClassMultiLinking(NumpyDocLinkingClass):
 
 
 # TODO dataclass example (Splat Extention is the dataclass example)
-# TODO docstr.meta.splat_extention(type_checking=True)
+# TODO @docstr.meta.splat_extention(type_checking=True)
 class NumpyDocClassSplatExtention(NumpyDocClassRecursiveLinking):
     """A Numpy example class that uses docstr's Splat Extention.
     Splat Extension reduces redundant coding by allowing the programmer to
@@ -268,7 +271,7 @@ class NumpyDocClassSplatExtention(NumpyDocClassRecursiveLinking):
             class_specific_value_2,
         )
 
-    #docstr.meta.splat_extention(type_checking=True) TODO necessary?
+    #@docstr.meta.splat_extention(type_checking=True) TODO necessary?
     def bar(self, *args, **kwargs):
         """Method overrides parent and the params are expanded by docstr.meta
 
