@@ -151,7 +151,9 @@ class FuncDocstring(Docstring):
         The function's Arguments/Args or the class' Attributes.
     """
     args : OrderedDict({str : ArgDoc}) = None
-    other_args : OrderedDict({str : ArgDoc}) = None # TODO implement parsing
+    # TODO implement parsing. While some styles allow other args, whynot
+    # combine in this token?
+    #other_args : OrderedDict({str : ArgDoc}) = None
     return_doc : BaseDoc = ValueExists.false
 
     #def __post_init__(self, args):
