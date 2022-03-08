@@ -5,6 +5,8 @@ docstrings.
 from collections import OrderedDict
 from types import FunctionType
 
+import pytest
+
 from docstr import docstring, parse
 
 import testing.numpy_example_docstrings as examples
@@ -15,33 +17,36 @@ import testing.numpy_example_docstrings as examples
 # TODO pytest hook to setup the common dependencies behind these tests. Write
 # once, after all...
 
-def test_docstr_parse_func():
-    # Create the expected result of docstring.
-    expected = docstring.FuncDocstring(
-        examples.numpy_doc_func.__name__,
-        FunctionType,
-        'This is the short desc. of the function, concat the paired strings',
-        args=OrderedDict(
-            foo=docstring.ArgDoc(
-                'foo',
-                str,
-                'Foo is an excellently documented string argument.',
+
+class TestParseFunc:
+    @pytest.mark.dependency(name='TestParseFunc')
+    def test_docstr_parse_func():
+        # Create the expected result of docstring.
+        expected = docstring.FuncDocstring(
+            examples.numpy_doc_func.__name__,
+            FunctionType,
+            'This is the short desc. of the function, concat the paired strings',
+            args=OrderedDict(
+                foo=docstring.ArgDoc(
+                    'foo',
+                    str,
+                    'Foo is an excellently documented string argument.',
+                ),
+                bar=docstring.ArgDoc(
+                    'bar',
+                    str,
+                    'Bar is an excellently documented string argument.',
+                )
             ),
-            bar=docstring.ArgDoc(
-                'bar',
+            return_doc=BaseDoc(
+                'Returns',
                 str,
-                'Bar is an excellently documented string argument.',
+                'An incredible ordered concatenation of the paired string inputs.',
             )
-        ),
-        return_doc=BaseDoc(
-            'Returns',
-            str,
-            'An incredible ordered concatenation of the paired string inputs.',
         )
-    )
 
-    # Decide if parser is function or class object.
-    parsed = parse(examples.numpy_doc_func)
+        # Decide if parser is function or class object.
+        parsed = parse(examples.numpy_doc_func)
 
-    # Comparison supported betweend the docstr.docstring classes.
-    assert expected == parsed
+        # Comparison supported betweend the docstr.docstring classes.
+        assert expected == parsed
