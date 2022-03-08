@@ -3,7 +3,7 @@ After parsing the docstrings, the result are these token objects filled out.
 From these tokens, syntax checking as well as "compile" actions may occur.
 """
 from enum import Flag, unique
-from collections import OrderedDict
+from collections import OrderedDict, MutableSet
 from dataclasses import dataclass, InitVar
 from keyword import iskeyword
 
@@ -43,16 +43,8 @@ class ValueExists(Flag):
     false = False
 
 
-class MultiType(object):
+class MultiType(MutableSet):
     """A list of multiple types for when a variable may take multiple types."""
-    def __init__(self, types):
-        try:
-            self.types = tuple(types)
-        except TypeError as e:
-            raise TypeError(
-                f'`types` must be a `tuple`, not: {type(types)}'
-            ).with_traceback(e.__traceback__)
-
     def check(self, objs):
         raise NotImplementedError('Consider pydantic? or extend argparse')
         # TODO for this to be worth an object, type checking/handling needs
@@ -219,17 +211,17 @@ class ClassDocstring(Docstring):
     init : InitVar[FuncDocstring] = None
     methods : {str: FuncDocstring} = None
 
-    def __post_init__(self, init_docstring):
+    def __post_init__(self, init):
         # TODO attributes are unnecessary for bare min config. uses init or
         # load-like function, but is useful for type checking.
 
-        if init_docstring is None:
+        if init is None:
             raise TypeError(' '.join([
                 'ClassDocstring() missing 1 required positional argument:',
                 '`init_docstring` Provide via keyword, if unable to through',
                 'position.',
             ]))
-        self.init_docstring  = init_docstring
+        self.init = init
 
     def get_parser(self, parser=None):
         """Creates the argparser from the contents of the ClassDocstring."""
