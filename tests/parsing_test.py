@@ -18,15 +18,11 @@ import testing.numpy_example_docstrings as examples
 # once, after all...
 
 def test_docstr_parse_func():
-    short_desc = \
-        'This is the short desc. of the function, concat the paired strings'
-
     # Create the expected result of parsing.
     expected = docstring.FuncDocstring(
         'numpy_doc_func',
-        short_desc,
         FunctionType,
-        short_desc,
+        'This is the short desc. of the function, concat the paired strings',
         args=OrderedDict(
             foo=parsing.ArgDoc(
                 'foo',
@@ -54,7 +50,61 @@ def test_docstr_parse_func():
 
 
 def test_class_of_primitives():
+    """Tests the example class of primitives, but also includes attribute as
+    init arg inherent pass through, which only works when not using meta splat
+    expansion.
+    """
     # TODO Create the expected result of parsing.
+    expected = docstring.ClassDocstring(
+        'NumpyDocClass',
+        examples.NumpyDocClass,
+        'This is an example class with Numpy docstrings. Short description ends.',
+        attributes=OrderedDict(
+            name=parsing.ArgDoc(
+                'name',
+                'Foo is an excellently documented string argument.',
+                str,
+            ),
+            a_plus_b=parsing.ArgDoc(
+                'a_plus_b',
+                'Foo is an excellently documented string argument.',
+                str,
+            ),
+            x_times_y=parsing.ArgDoc(
+                'x_times_y',
+                'Foo is an excellently documented string argument.',
+                str,
+            ),
+            c=parsing.ArgDoc(
+                'c',
+                'Foo is an excellently documented string argument.',
+                str,
+            ),
+            z=parsing.ArgDoc(
+                'z',
+                'Foo is an excellently documented string argument.',
+                str,
+            ),
+        ),
+        init=FuncDocstring(
+            '__init__',
+            FunctionType,
+            args=OrderedDict(
+                #name=
+                a=
+                b=
+                x=
+                y=
+                #z=
+            ),
+        ),
+        # TODO default ignore?, ignore properties, allow skip_missing_doc
+        methods=dict(
+            foo=FuncDocstring(
+                'foo',
+            ),
+        ),
+    )
 
     # TODO Decide if parser is function or class object.
     parsed = docstr.parsing.parse(examples.NumpyDocClass)
@@ -71,6 +121,7 @@ def test_class_doc_linking():
 
     # TODO Comparison supported betweend the docstr.docstring classes.
     assert expected == parsed
+
 
 def test_class_doc_2hop_linking_and_non_primitive_arg():
     # TODO Create the expected result of parsing.
