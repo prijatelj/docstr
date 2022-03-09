@@ -126,4 +126,4 @@ class TestParseClassPrimitives(TestParseFunc):
         expansion.
         """
         parsed = parse(examples.NumpyDocClass)
-        assert expected == parsed
+        assert expected_class_of_primitives == parsed
