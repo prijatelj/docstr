@@ -1,6 +1,7 @@
 """Code for parsing docstrings."""
 from collections import OrderedDict
 from copy import deepcopy
+#from functools import wraps
 from keyword import iskeyword
 import re
 from typing import NamedTuple
@@ -136,8 +137,10 @@ class DocstringParser(object):
         """
         Args
         ----
-        style : {'rst', 'numpy', 'google'}
-            The style expected to parse.
+        style : 'numpy' | 'google' | 'rest' | str
+            The docstring style to expect when parsing. Default choices are
+            {'numpy', 'google', 'rest'}, although any string may be given as
+            long as there is a sphinx style conversion extention available.
         doc_linking : bool = False
             Not Implemented Yet
         config : sphinx.ext.napoleon.Config = None
@@ -515,7 +518,7 @@ class DocstringParser(object):
         style=None,
         doc_linking=False,
     ):
-        """General parsing of a given object with a __docstr__ attribute.
+        """General parsing of a given object with a __doc__ attribute.
 
         Args
         ----
@@ -585,17 +588,19 @@ class DocstringParser(object):
         return self.parse_func(obj.__doc__, name)#, obj_type)
 
 
-def parse(doc_style, obj, **kwargs):
+def parse(obj, *args, **kwargs):
     """Parses the object with the expected doc_style.
     Args
     ----
-    doc_style : 'numpy' | 'google' | 'rest' | str
-    The docstring style to expect when parsing. Default choices are
-    {'numpy', 'google', 'rest'}, although any string may be given as long
-    as there is a sphinx style conversion extention available.
+    style : 'numpy' | 'google' | 'rest' | str
+        The docstring style to expect when parsing. Default choices are
+        {'numpy', 'google', 'rest'}, although any string may be given as long
+        as there is a sphinx style conversion extention available.
     obj : object
-    The object whose __doc__ is to be parsed.
+        The object whose __doc__ is to be parsed.
     """
-    raise NotImplementedError('Parser creation, calling & returning tokens.')
-    # TODO create parser given doc_style
-    # TODO parse the object's docstring and return the tokenized results.
+    # Create parser given doc_style
+    parser = DocstringParser(*args, **kwargs)
+
+    # Parse the object's docstring and return the tokenized results.
+    return parser.parse(obj)
