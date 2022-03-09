@@ -3,7 +3,8 @@ After parsing the docstrings, the result are these token objects filled out.
 From these tokens, syntax checking as well as "compile" actions may occur.
 """
 from enum import Flag, unique
-from collections import OrderedDict, MutableSet
+from collections import OrderedDict
+from collections.abc import Set # MutableSet
 from dataclasses import dataclass, InitVar
 from keyword import iskeyword
 
@@ -43,8 +44,12 @@ class ValueExists(Flag):
     false = False
 
 
-class MultiType(MutableSet):
+#class MultiType(MutableSet):
+@dataclass
+class MultiType:
     """A list of multiple types for when a variable may take multiple types."""
+    types : set
+
     def check(self, objs):
         raise NotImplementedError('Consider pydantic? or extend argparse')
         # TODO for this to be worth an object, type checking/handling needs

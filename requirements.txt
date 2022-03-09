@@ -1,10 +1,10 @@
 # Uses walrus assignment, could be replaced
-python>=3.8
+#python>=3.8
 
 # Uses sphinx for napoleon docstring conversion
 sphinx
 
 # Extends ConfigArgParse for config parsing support
-#ConfigArgParse
+ConfigArgParse
 #ConfigArgParse[config]
 #pydantic[typing]

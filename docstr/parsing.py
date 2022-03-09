@@ -583,3 +583,19 @@ class DocstringParser(object):
             #return ClassDocstring(name, obj_type, description, )
 
         return self.parse_func(obj.__doc__, name)#, obj_type)
+
+
+def parse(doc_style, obj, **kwargs):
+    """Parses the object with the expected doc_style.
+    Args
+    ----
+    doc_style : 'numpy' | 'google' | 'rest' | str
+    The docstring style to expect when parsing. Default choices are
+    {'numpy', 'google', 'rest'}, although any string may be given as long
+    as there is a sphinx style conversion extention available.
+    obj : object
+    The object whose __doc__ is to be parsed.
+    """
+    raise NotImplementedError('Parser creation, calling & returning tokens.')
+    # TODO create parser given doc_style
+    # TODO parse the object's docstring and return the tokenized results.

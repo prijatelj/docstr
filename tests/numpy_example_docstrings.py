@@ -176,13 +176,13 @@ class NumpyDocClassLinking(NumpyDocClass):
         return my + oh
 
 
-class NumpyDocClassMultiLinking(NumpyDocLinkingClass):
+class NumpyDocClassMultiLinking(NumpyDocClassLinking):
     """A Numpy example class that uses multiple docstring linking of depth 2
     links.
 
     An example of linking text from the long description of another docstring:
     DO QUOTING MARKDOWNFOR SPHINX:
-        $see `NumpyDocLinkingClass`$
+        $see `NumpyDocClassLinking`$
 
     An example of linking a subset of text from the long description of another
     docstring:
@@ -204,9 +204,9 @@ class NumpyDocClassMultiLinking(NumpyDocLinkingClass):
         This functionality is set in the function that walks the docstrings and
         generates the configargparser.
     just_for_me : bool = True
-    see `NumpyDocClass`
+    see `NumpyDocClassLinking`
     """
     def __init__(self, custom_obj_instance, just_for_me=True, *args, **kwargs):
         custom_obj_instance = self.custom_obj_instance
         self.just_for_me = just_for_me
-        super(self, NumpyDocLinkingClass).__init__(*args, **kwargs)
+        super(self, NumpyDocClassLinking).__init__(*args, **kwargs)
