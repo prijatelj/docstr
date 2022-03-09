@@ -18,7 +18,20 @@ from testing.parsing.test_parse_class_with_primitives import (
 
 @pytest.fixture
 def expected_class_multi_linking(expected_class_linking):
-    expected_class_linking
+    expected_class_linking.attributes.update(
+        custom_obj_instance=ArgDoc(
+            'custom_obj_instance',
+            examples.NumpyDocClass,
+            """An example of recusrive linking without `see namespace` that allows for
+        specifying a custom class as the type and then recursively parsing that
+        object, if desired, to make a complete configargparser w/ hierarchical
+        namespaces.
+
+        This functionality is set in the function that walks the docstrings and
+        generates the configargparser.""",
+        ),
+        just_for_me=docstring.ArgDoc('just_for_me', bool, default=True),
+    )
     return docstring.ClassDocstring(
         examples.NumpyDocClassMultiLinkning.__name__,
         examples.NumpyDocClassMultiLinkning,
@@ -36,10 +49,10 @@ def expected_class_multi_linking(expected_class_linking):
             $see `NumpyDocClass`[3:5]$
 
         # TODO labeled/subsection linking to avoid using indexing of long
-        # description by lines?
-        """,
-        attributes=expected_class_of_primitives.attributes,
-        methods=expected_class_of_primitives.methods,
+        # description by lines?""",
+        attributes=expected_class_linking.attributes,
+        init=None,
+        methods=expected_class_linking.methods,
     )
 
 
@@ -53,4 +66,4 @@ class TestParseClassMultiLinking(TestParseClassLinking):
         expected_class_multi_linking
     ):
         parsed = parse(examples.NumpyDocClassMultiLinking)
-        assert expected == parsed
+        assert expected_class_multi_linking == parsed
