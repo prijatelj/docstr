@@ -56,13 +56,13 @@ def expected_func_choices(expected_func_defaults):
 @pytest.mark.incremental
 class TestParseFunc:
     def test_docstr_parse_func(expected_func):
-        parsed = parse('numpy', examples.numpy_doc_func)
+        parsed = parse(examples.numpy_doc_func, 'numpy')
         assert expected == parsed
 
     def test_docstr_parse_func_defaults(expected_func_defaults):
-        parsed = parse('numpy', examples.numpy_doc_func_defaults)
+        parsed = parse(examples.numpy_doc_func_defaults, 'numpy')
         assert expected_func_defaults == parsed
 
     def test_docstr_parse_func_choices(expected_func_choices):
-        parsed = parse('numpy', examples.numpy_doc_func_choices)
+        parsed = parse(examples.numpy_doc_func_choices, 'numpy')
         assert expected_func_choices == parsed
