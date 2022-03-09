@@ -38,6 +38,7 @@ def expected_class_linking(expected_class_of_primitives):
         examples.NumpyDocClassLinkning,
         'A Numpy example class that uses docstring linking.',
         attributes=expected_class_of_primitives.attributes,
+        init=None,
         methods=expected_class_of_primitives.methods,
     )
 
