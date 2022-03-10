@@ -5,6 +5,7 @@ from copy import deepcopy
 from keyword import iskeyword
 import re
 from typing import NamedTuple
+from types import FunctionType
 
 import docutils
 from docutils import nodes
@@ -175,26 +176,29 @@ class DocstringParser(object):
             '|'.join([self.re_field.pattern, self.re_directive.pattern])
         )
 
-        # Temporary useful patterns
-        section_end_pattern = fr'({self.re_section.pattern}|\Z)'
+        # Temporary useful patterns to build others from
+        section_end_pattern = fr'{self.re_section.pattern}|\Z'
         name_pattern = r'[ \t]+(?P<name>[\*\w]+)'
+        # Non-Greedy kleene star
         doc_pattern = fr'[ \t]*(?P<doc>.*?)({section_end_pattern})'
 
-        # TODO Create unit tests to ensure the name & doc patterns extract
-        # appropriately.
-
         # Regexes for checking and parsing the types of sections
-        #self.re_param = re.compile(f':param{name_pattern}:{doc_pattern}', re.S)
-        self.re_param = re.compile(f'param{name_pattern}', re.S)
-        self.re_type = re.compile(f':type{name_pattern}:{doc_pattern}', re.S)
+        self.re_param = re.compile(fr'param{name_pattern}')
+        self.re_type = re.compile(fr':type{name_pattern}:{doc_pattern}', re.S)
 
         # For parsing the inner parts of a parameter type string.
         # Captures the type or multi-types as a list
-        self.re_default = re.compile(
-            r'(?<=|,[ \t]*default)[ \t]*(?P<default>[^\s]+)'
-        )
+        #self.re_default = re.compile(
+        #    r'(?<=|,[ \t]*default)[ \t]*(?P<default>[^\s]+)'
+        #)
         # Must be applied after default match is removed
-        self.re_typedoc = re.compile(r'(?:[ \t]*\|[ \t]*)*(\w[\w\.]*)', re.S)
+        #self.re_typedoc = re.compile(r'(?:[ \t]*\|[ \t]*)*(\s+)')
+        self.re_typedoc = re.compile(''.join([
+            r'[ \t]*(?:\|[ \t]*)*',
+            r'(?P<name>[^\s|]+)',
+            r'(?:[ \t]*=[ \t]*',
+            r'(?P<default>[^\s|]+))?',
+        ]))
 
         self.re_returns = re.compile(':returns:{doc_pattern}', re.S)
         self.re_rtype = re.compile(':rtype:{doc_pattern}', re.S)
@@ -205,9 +209,7 @@ class DocstringParser(object):
         )
         # TODO extract attribute type ':type: <value>\n'
         #   Need to fix doc pattern here... this is wrong.
-        self.re_attr_type = re.compile('[ \t]+:type:{doc_pattern}', re.S)
-
-        #self.re_other_params = re.compile()
+        self.re_attr_type = re.compile(fr'[ \t]+:type:{doc_pattern}', re.S)
 
         self.re_rubric = re.compile(
             fr'\.\.[ \t]*attribute[ \t]*::{name_pattern}[ \t]*\n{doc_pattern}',
@@ -215,10 +217,7 @@ class DocstringParser(object):
         )
 
         # Register AttributeDirective once for this parser.
-        rst.directives.register_directive(
-            'attribute',
-            AttributeDirective,
-        )
+        rst.directives.register_directive('attribute', AttributeDirective)
 
     def _parse_initial(self, docstring):
         """Internal util for pasring inital portion of docstring."""
@@ -230,9 +229,9 @@ class DocstringParser(object):
 
         # Convert the docstring is in reStructuredText styling
         if self.style == 'google':
-            docstring = GoogleDocstring(docstring, self.config)
+            docstring = GoogleDocstring(docstring, self.config).lines()
         elif self.style == 'numpy':
-            docstring = NumpyDocstring(docstring, self.config)
+            docstring = NumpyDocstring(docstring, self.config).lines()
         # TODO allow the passing of a func/callable to transform custom doc
         # styles
 
@@ -317,7 +316,7 @@ class DocstringParser(object):
         docstring, fname, obj_type = self._obj_defaults(obj, fname, obj_type)
         docstring, short_description = self._parse_initial(docstring)
 
-        # Use docutils to parse the RST
+        # Use docutils to parse the RST (one pass... followed by more.)
         doc = parse_rst(docstring)
 
         # TODO optionally set how to handle long descriptions for argparse help
@@ -327,6 +326,7 @@ class DocstringParser(object):
             long_description = '\n'.join(
                 [ch.astext() for ch in doc.children[:long_desc_end_idx]]
             )
+        # TODO trim trailing whitespace
 
         if not (field_list := doc.first_child_not_matching_class(
             nodes.field_list
@@ -367,21 +367,15 @@ class DocstringParser(object):
                 # TODO support dataclass format: param = default -> type
                 type_str = field.children[0][1].astext()
 
-                # Parse default first & remove to get the re multi-type to work
-                if default := self.re_default.search(type_str):
-                    span = default.span()
-                    default = self.re_default.findall(
-                        type_str[span[0]:span[1]]
-                    )[0]
-
-                    type_str = type_str[:[0]]
-                else:
-                    default = ValueExists.false
-
-                parsed_type = self.re_typedoc.findall(type_str)
+                parsed_types = self.re_typedoc.findall(type_str)
 
                 if len(parsed_type) < 1:
                     raise SyntaxError('No type found.')
+
+                if parsed_types[-1][1]:
+                    default = parsed_types[-1][1]
+                else:
+                    default = ValueExists.false
 
                 for found in parsed_type:
                     if '.' in found and not all(
@@ -396,7 +390,7 @@ class DocstringParser(object):
                         )
 
                 if len(parsed_type) > 1:
-                    parsed_type = MultiType(parsed_type)
+                    parsed_type = MultiType(set(parsed_type))
 
                 # Update the params and types
                 if name in params:
@@ -554,8 +548,6 @@ class DocstringParser(object):
             or a ClassDocstring which contains the Docstring objects of the
             methods of the class along with the class' parsed Docstring object.
         """
-        raise NotImplementedError('Use `parse_class()` or `parse_func()`')
-
         # TODO optionally parallelize the parsing, perhaps with Ray?
         if isinstance(obj, str):
             if name is None or obj_type is None:
@@ -577,15 +569,13 @@ class DocstringParser(object):
         # TODO if a class, then parse the __init__ too, but as the main
         # docstring of interest. As it defines the params to give, and thus
         # the args we care about.
-        if isinstance(obj_type, type):
-            class_docstring = obj.__doc__
-            init_docstring = self.parse_func(obj.__init__, '__init__')
+        if isinstance(obj_type, FunctionType):
+            return self.parse_func(obj.__doc__, name)#, obj_type)
 
-            raise NotImplementedError('Need to add parsing of a class')
-            # TODO add parsing of a class' methods in given list.
-            #return ClassDocstring(name, obj_type, description, )
-
-        return self.parse_func(obj.__doc__, name)#, obj_type)
+        # elif isinstance(obj_type, type): TODO raise if not class object?
+        # TODO handle detection of methods, have option ot find those with
+        # docs, warn when encountering those without docs.
+        return self.parse_class(obj, name, obj_type)
 
 
 def parse(obj, *args, **kwargs):
