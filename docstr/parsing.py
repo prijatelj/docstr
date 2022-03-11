@@ -1,7 +1,9 @@
 """Code for parsing docstrings."""
+import builtins
 from collections import OrderedDict
 from copy import deepcopy
 #from functools import wraps
+from inspect import getmodule
 from keyword import iskeyword
 import re
 from typing import NamedTuple
@@ -19,6 +21,7 @@ from docstr.docstring import (
     ArgDoc,
     ClassDocstring,
     FuncDocstring,
+    BaseDoc,
 )
 
 # Modify `sphinxcontrib.napoleon` to include `exputils` mod to Numpy style
@@ -47,6 +50,41 @@ from docstr.docstring import (
 # handeld by parsing their docstrings... when automating the loading of
 # classes. Just keep it in mind, and note that Factories make sense when the
 # sub classes, say a bunch of different torch.modules or tf.keras.models
+
+# TODO optionally set how to handle long descriptions for argparse help.
+
+
+def get_namespace_obj(namespace, name, default=ValueExists.false):
+    """Given a str of an object's identifier in the given object whose module
+    is used as the namespace, returns the object, otherwise returns the default
+    if given or raises error."""
+    try:
+        return getattr(namespace, name)
+    except AttributeError as e:
+        if default != ValueExists.false:
+            return default
+        raise e
+
+
+def get_builtin(name, default=ValueExists.false):
+    """Accesses pythons builtins using a key as a dictionary access via get."""
+    return get_namespace_obj(builtins, name, default)
+
+
+def get_object(namespace_obj, name, default=ValueExists.false):
+    """Given a str of an object's identifier in the given object whose module
+    is used as the namespace, returns the object, otherwise returns the default
+    if given or raises error. The name is first checked if it is a python
+    builtin object, otherwise it will attempt to return the attribute of the
+    same given `name` in the module that namespace_obj is contained within.
+    If the namespace_obj is a module itself, then it will be used to get the
+    attribute `name`.
+    """
+    try:
+        return get_builtin(name, default)
+    except AttributeError as e:
+        return get_namespace_obj(getmodule(namespace_obj), name, default)
+    # TODO handle being given an instance of an object, esp. primitive.
 
 
 class AttributeName(nodes.TextElement):
@@ -118,10 +156,52 @@ def parse_rst(text: str) -> nodes.document:
     return document
 
 
-class InitialParse(NamedTuple):
-    """The results of the parsing of the beginning of a docstring object."""
-    docstring: str
-    short_description: str
+def _obj_defaults(obj, name=None, obj_type=ValueExists.false):
+    """Given the object and optionally its information, return the object's
+    docstring, name, and object type.
+
+    Args
+    ----
+    obj : object | str
+        The object whose __doc__ is to be parsed. If a str object of the
+        docstring, then the `name` and `obj_type` parameters must be
+        provided.
+    name : str, optional
+        The name of the object whose docstring is being parsed. Only needs
+        to be supplied when the `obj` is a `str` of the docstring to be
+        parsed, otherwies not used.
+    obj_type : type, optional
+        The type of the object whose docstring is being parsed. Only needs
+        to be supplied when the `obj` is a `str` of the docstring to be
+        parsed, otherwies not used.
+
+    Returns
+    -------
+    (str, str, type)
+        A tuple of docstring, object name, and object type.
+    """
+    # TODO separate this explicit giving from the automated finding check
+    #   The explicit giving of names etc is weird and probs unnecessary.
+    if isinstance(obj, str):
+        if name is None:
+            raise ValueError('`fname` must be given if `obj` is a `str`.')
+        if obj_type is ValueExists.false:
+            raise ValueError(
+                '`obj_type` must be given if `obj` is a `str`.'
+            )
+        docstring = obj
+    else:
+        docstring =  obj.__doc__
+        if docstring is None:
+            raise ValueError(
+                'The docstring of object `{obj}` does not exist.'
+            )
+        if name is None:
+            name =  obj.__name__
+        if obj_type is ValueExists.false:
+            obj_type =  type(obj)
+
+    return docstring, name, obj_type
 
 
 class DocstringParser(object):
@@ -184,7 +264,9 @@ class DocstringParser(object):
 
         # Regexes for checking and parsing the types of sections
         self.re_param = re.compile(fr'param{name_pattern}')
-        self.re_type = re.compile(fr':type{name_pattern}:{doc_pattern}', re.S)
+        #self.re_type = re.compile(fr':type{name_pattern}:{doc_pattern}', re.S)
+        # docutils splits name and doc pattern into field name and field body
+        self.re_type = re.compile(fr'type{name_pattern}')
 
         # For parsing the inner parts of a parameter type string.
         # Captures the type or multi-types as a list
@@ -240,95 +322,33 @@ class DocstringParser(object):
         #   TODO Get all param names, their types (default to object w/ logging
         #   of no set type), and their descriptions
 
-        if len(docstring) < 1:
-            raise ValueError('The docstring is only a short description!')
+        #if len(docstring) < 1:
+        #    raise ValueError('The docstring is only a short description!')
 
-        # Short description is always the first line only
-        short_description = docstring[0]
+        return '\n'.join(docstring)
 
-        docstring = '\n'.join(docstring)
-
-        return InitialParse(docstring, short_description)
-
-    def _obj_defaults(self, obj, name=None, obj_type=ValueExists.false):
-        """Given the object and optionally its information, return the object's
-        docstring, name, and object type.
-
-        Args
-        ----
-        obj : object | str
-            The object whose __doc__ is to be parsed. If a str object of the
-            docstring, then the `name` and `obj_type` parameters must be
-            provided.
-        name : str, optional
-            The name of the object whose docstring is being parsed. Only needs
-            to be supplied when the `obj` is a `str` of the docstring to be
-            parsed, otherwies not used.
-        obj_type : type, optional
-            The type of the object whose docstring is being parsed. Only needs
-            to be supplied when the `obj` is a `str` of the docstring to be
-            parsed, otherwies not used.
-
-        Returns
-        -------
-        (str, str, type)
-            A tuple of docstring, object name, and object type.
-        """
-        if isinstance(obj, str):
-            if name is None:
-                raise ValueError('`fname` must be given if `obj` is a `str`.')
-            if obj_type is ValueExists.false:
-                raise ValueError(
-                    '`obj_type` must be given if `obj` is a `str`.'
-                )
-            docstring = obj
-        else:
-            docstring =  obj.__doc__
-            if docstring is None:
-                raise ValueError(
-                    'The docstring of object `{obj}` does not exist.'
-                )
-            if name is None:
-                name =  obj.__name__
-            if obj_type is ValueExists.false:
-                obj_type =  type(obj)
-
-        return docstring, name, obj_type
-
-    def parse_func(self, obj, fname=None, obj_type=ValueExists.false):
+    def parse_func(self, obj, fname=None):
         """Parse the docstring of a function.
 
         Args
         ----
         obj : object | str
-            The object whose __doc__ is to be parsed. If a str object of the
-            docstring, then the `name` and `obj_type` parameters must be
-            provided.
+            The object whose __doc__ is to be parsed.
         fname : str, optional
             The name of the object whose docstring is being parsed. Only needs
             to be supplied when the `obj` is a `str` of the docstring to be
             parsed, otherwies not used.
-        obj_type : type, optional
-            The type of the object whose docstring is being parsed. Only needs
-            to be supplied when the `obj` is a `str` of the docstring to be
-            parsed, otherwies not used.
         """
-        docstring, fname, obj_type = self._obj_defaults(obj, fname, obj_type)
-        docstring, short_description = self._parse_initial(docstring)
-
+        docstring = self._parse_initial(obj.__doc__)
         # Use docutils to parse the RST (one pass... followed by more.)
         doc = parse_rst(docstring)
 
-        # TODO optionally set how to handle long descriptions for argparse help
-        if long_desc_end_idx := doc.first_child_not_matching_class(
-            nodes.paragraph
-        ):
-            long_description = '\n'.join(
-                [ch.astext() for ch in doc.children[:long_desc_end_idx]]
+        if description := doc.first_child_not_matching_class(nodes.paragraph):
+            description = '\n'.join(
+                [ch.astext() for ch in doc.children[:description]]
             )
-        # TODO trim trailing whitespace
 
-        if not (field_list := doc.first_child_not_matching_class(
+        if not (field_list := doc.first_child_matching_class(
             nodes.field_list
         )):
             raise ValueError('The given docstring includes no fields!')
@@ -339,90 +359,113 @@ class DocstringParser(object):
         # Prepare the paired dicts for params to catch dups, & missing pairs
         params = OrderedDict()
         types = OrderedDict()
+        returns = ValueExists.false
         # Go through the field_list and parse the values.
         for field in field_list:
             field_name = field.children[0].astext()
             if name := self.re_param.findall(field_name):
+                # TODO handle python check of correct named arg/attribute
+                if len(name) > 1:
+                    raise ValueError(f'Multiple param names: {name}')
+                else:
+                    name = name[0]
                 if name in params:
-                    raise KeyError('Duplicate parameter!')
-                if name in types:
+                    raise KeyError(f'Duplicate parameter: {name}')
+                if name in types: # Make ArgDoc w/ paired type
                     params[name] = ArgDoc(
                         name=name,
-                        description=field.children[0][1].astext(),
+                        description=field.children[1].astext(),
                         type=types[name].type,
                         default=types[name].default,
                     )
-                else:
+                else: # Make initial ArgDoc w/o type
                     params[name] = ArgDoc(
                         name=name,
-                        description=field.children[0][1].astext(),
+                        description=field.children[1].astext(),
                     )
             elif name := self.re_type.findall(field_name):
+                if len(name) > 1:
+                    raise ValueError(f'Multiple type param names: {name}')
+                else:
+                    name = name[0]
                 if name in types:
-                    raise KeyError('Duplicate parameter type!')
+                    raise KeyError(f'Duplicate parameter type: {name}')
 
-                # TODO type parser: [type[| type]*][ = [default]][, optional]
-                #   thus requiring a multi-type object, just a special class
-                #   that encapsulates a list.
                 # TODO support dataclass format: param = default -> type
-                type_str = field.children[0][1].astext()
-
+                type_str = field.children[1].astext()
                 parsed_types = self.re_typedoc.findall(type_str)
 
-                if len(parsed_type) < 1:
-                    raise SyntaxError('No type found.')
+                if len(parsed_types) < 1:
+                    raise ValueError(f'No type found in parsing: {type_str}')
 
                 if parsed_types[-1][1]:
-                    default = parsed_types[-1][1]
+                    # TODO make the actual object, not its str
+                    default = get_object(obj, parsed_types[-1][1])
                 else:
                     default = ValueExists.false
 
-                for found in parsed_type:
-                    if '.' in found and not all(
-                        [part.isidentifier() for part in found.split('.')]
-                    ):
-                        raise ValueError(
-                            'Arg type consists of not identifier parts'
-                        )
-                    elif iskeyword(found):
-                        raise ValueError(
-                            'The parameter type cannot be a keyword!'
-                        )
+                found_types = []
+                for found, _ in parsed_types:
+                    found_types.append(get_object(obj, found))
 
-                if len(parsed_type) > 1:
-                    parsed_type = MultiType(set(parsed_type))
+                if len(found_types) > 1:
+                    found_types = MultiType(set(found_types))
+                else:
+                    found_types = found_types[0]
 
                 # Update the params and types
                 if name in params:
                     # Update the existing ArgDoc.
                     types[name] = ValueExists.true
-                    params[name].type = parsed_type
+                    params[name].type = found_types
                     params[name].default = default
                 else:
                     # Save the partially made parameter doc for later.
                     types[name] = ArgDoc(
                         name=name,
                         description=ValueExists.false,
-                        type=parsed_type,
+                        type=found_types,
                         default=default,
                     )
-            # TODO Handle returns, rtype: they will be in same field list,
-            # probably
+            elif field_name == 'returns':
+                if isinstance(returns, BaseDoc):
+                    if returns.name == 'returns': # only set here
+                        raise KeyError('Multiple `returns` fields exist!')
+                    returns.name = 'returns'
+                    returns.description = field.children[1].astext()
+                else:
+                    returns = BaseDoc(
+                        'returns',
+                        description=field.children[1].astext(),
+                    )
+            elif field_name == 'rtype':
+                if isinstance(returns, BaseDoc):
+                    if returns.name != 'returns' \
+                        or returns.type != ValueExists.false:
+                        raise KeyError('Multiple `rtype` fields exist!')
+                    # TODO Namespace grabbing of types... not just store str
+                    returns.type = get_object(obj, field.children[1].astext())
+                else:
+                    # TODO Namespace grabbing of types... not just store str
+                    returns = BaseDoc(
+                        '',
+                        get_object(obj, field.children[1].astext()),
+                    )
 
-            # Any unmatched pairs of params and types raises an error
-            if xor_set := set(types) ^ set(params):
-                raise ValueError(' '.join([
-                    'There are unmatched params and types in the docstring:',
-                    f'{xor_set}',
-                ]))
+        # Any unmatched pairs of params and types raises an error
+        if xor_set := set(types) ^ set(params):
+            raise ValueError(' '.join([
+                'There are unmatched params and types in the docstring:',
+                f'{xor_set}',
+            ]))
 
         # Return the Function Docstring Object that stores the docsting info
         return FuncDocstring(
+            name=obj.__name__,
+            type=FunctionType,
+            description=description,
             args=params,
-            name=fname,
-            description=long_description,
-            type=obj_type,
-            short_description=short_description,
+            returns=returns,
         )
 
     def parse_class(
@@ -445,22 +488,21 @@ class DocstringParser(object):
         methods : [str] = None
             Additional methods whose docstrings are to be parsed.
         """
-        docstring, name, obj_type = self._obj_defaults(obj, name, obj_type)
-        docstring, short_description = self._parse_initial(docstring)
+        docstring = self._parse_initial(obj.__doc__)
 
-        # Obtain the long_description of the class.
+        # Obtain the description of the class.
         if first_section := self.re_section.search(docstring):
             # Extract the text from beginning to first section
-            long_description = docstring[:first_section.span()[0]]
+            description = docstring[:first_section.span()[0]]
         else:
             # There are no sections in the class docstring, so it is all desc.
-            long_description = docstring
+            description = docstring
 
         # TODO parse Attributes, optional, unless a dataclass or dataclass-like
 
         # Obtain the class' __init__ docstring
         init_obj = getattr(obj, '__init__')
-        if init_obj.__doc__ is None:
+        if not init_obj.__doc__:
             # TODO if __init__ does not have a docstring or no args but
             # Attributes does and the attribute names match the init's arg
             # names, then simply use the attribute docstrings as the args,
@@ -494,13 +536,12 @@ class DocstringParser(object):
             method_docstrs = None
 
         return ClassDocstring(
-            attributes=None,
-            init_docstring=init_docstr,
+            obj.__name__,
+            type(obj),
+            description,
+            attributes=None, # TODO
+            init=init_docstr,
             methods=method_docstrs,
-            name=name,
-            description=long_description,
-            type=obj_type,
-            short_description=short_description,
         )
 
     def parse(
@@ -520,21 +561,21 @@ class DocstringParser(object):
             The object whose __doc__ is to be parsed. If a str object of the
             docstring, then the `name` and `obj_type` parameters must be
             provided.
-        name : str, optional
+        name : str = None
             The name of the object whose docstring is being parsed. Only needs
             to be supplied when the `obj` is a `str` of the docstring to be
             parsed, otherwies not used.
-        obj_type : type, optional
+        obj_type : type = None
             The type of the object whose docstring is being parsed. Only needs
             to be supplied when the `obj` is a `str` of the docstring to be
             parsed, otherwies not used.
-        methods : [str], optional
+        methods : [str] = None
             A list of method names whose docstrings are all to be parsed and
             returned in a hierarchical manner encapsulating the hierarchical
             docstring of a class.  Only used when `obj` is a class object.
         style : str, default None
             Expected docstring style determining how to parse the docstring.
-        doc_linking : bool, default False
+        doc_linking : bool = False
             Linked docstring whose content applies to this docstring and will
             be parsed recursively.
 
@@ -569,8 +610,8 @@ class DocstringParser(object):
         # TODO if a class, then parse the __init__ too, but as the main
         # docstring of interest. As it defines the params to give, and thus
         # the args we care about.
-        if isinstance(obj_type, FunctionType):
-            return self.parse_func(obj.__doc__, name)#, obj_type)
+        if isinstance(obj, FunctionType):
+            return self.parse_func(obj, name)
 
         # elif isinstance(obj_type, type): TODO raise if not class object?
         # TODO handle detection of methods, have option ot find those with

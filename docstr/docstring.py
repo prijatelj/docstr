@@ -45,6 +45,8 @@ class ValueExists(Flag):
 
 
 #class MultiType(MutableSet):
+# NOTE may use typing.Literal for this? Intended for checking return types, but
+# perhaps this as well in cases where literal instances are expected?
 @dataclass
 class MultiType:
     """A list of multiple types for when a variable may take multiple types."""
@@ -159,7 +161,7 @@ class FuncDocstring(Docstring):
     # TODO implement parsing. While some styles allow other args, whynot
     # combine in this token?
     #other_args : OrderedDict({str : ArgDoc}) = None
-    return_doc : BaseDoc = ValueExists.false
+    returns : BaseDoc = ValueExists.false
 
     #def __post_init__(self, args):
     #    if args is None:
