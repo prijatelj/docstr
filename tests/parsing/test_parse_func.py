@@ -57,7 +57,7 @@ def expected_func_choices(expected_func_defaults):
 class TestParseFunc:
     def test_docstr_parse_func(expected_func):
         parsed = parse(examples.numpy_doc_func, 'numpy')
-        assert expected == parsed
+        assert expected_func == parsed
 
     def test_docstr_parse_func_defaults(expected_func_defaults):
         parsed = parse(examples.numpy_doc_func_defaults, 'numpy')
