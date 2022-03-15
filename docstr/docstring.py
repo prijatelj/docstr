@@ -52,6 +52,10 @@ class MultiType:
     """A list of multiple types for when a variable may take multiple types."""
     types : set
 
+    # TODO handle some internal assessment property that notes if this is a
+    # multi type of all literals, if so, then it specifies the choices values
+    # of that this variable may take.
+
     def check(self, objs):
         raise NotImplementedError('Consider pydantic? or extend argparse')
         # TODO for this to be worth an object, type checking/handling needs
@@ -74,7 +78,7 @@ class BaseDoc:
 class ArgDoc(BaseDoc):
     """Dataclass for an argument/parameter in docstrings."""
     default : InitVar[object] = ValueExists.false
-    choices : object = ValueExists.false
+    #choices : object = ValueExists.false
 
     def __post_init__(self, default):
         # Check if a valid name identifier for parameter (variable)
