@@ -30,8 +30,8 @@ def expected_func():
                 'Bar is an excellently documented string argument.',
             )
         ),
-        return_doc=BaseDoc(
-            'Returns',
+        returns=docstring.BaseDoc(
+            'returns',
             str,
             'An incredible ordered concatenation of the paired string inputs.',
         )
@@ -48,8 +48,8 @@ def expected_func_defaults(expected_func):
 @pytest.fixture
 def expected_func_choices(expected_func_defaults):
     choices = docstring.MultiType({'foo', 'bar'})
-    expected_func_defaults.args['foo'].choices = choices
-    expected_func_defaults.args['bar'].choices = choices
+    expected_func_defaults.args['foo'].type = choices
+    expected_func_defaults.args['bar'].type = choices
     return expected_func_defaults
 
 
