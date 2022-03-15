@@ -1,4 +1,5 @@
 """Code for parsing docstrings."""
+import ast
 import builtins
 from collections import OrderedDict
 from copy import deepcopy
@@ -45,6 +46,10 @@ from docstr.docstring import (
 # parsed, where they are converted to reStructuredText and then parsed. So,
 # output Docstring Object to str of RST and then optionally convert to Google
 # or Numpy.
+#   NOTE that abstract syntax trees (ast) also supplies the structure of
+#   classes, funtions, methods, and other syntax trees. When applicable, its
+#   use inplace of 3rd party packages may be more desirable since it is
+#   supplied by the python standard library.
 
 # TODO note that Factories or module level function that load classes need
 # handeld by parsing their docstrings... when automating the loading of
@@ -71,6 +76,20 @@ def get_builtin(name, default=ValueExists.false):
     return get_namespace_obj(builtins, name, default)
 
 
+def get_object_intsance(
+    namespace_obj,
+    name,
+    default=ValueExists.false,
+    astype=None,
+):
+    """Create an object instance or literal from a string representation."""
+    if astype is not None:
+        raise NotImplementedError('Informed through `astype` not yet coded.')
+    # ast.literal_eval() supports: strings, bytes, numbers, tuples, lists,
+    # dicts, sets, booleans, None and Ellipsis.
+    return ast.literal_eval(name)
+
+
 def get_object(namespace_obj, name, default=ValueExists.false):
     """Given a str of an object's identifier in the given object whose module
     is used as the namespace, returns the object, otherwise returns the default
@@ -79,12 +98,29 @@ def get_object(namespace_obj, name, default=ValueExists.false):
     same given `name` in the module that namespace_obj is contained within.
     If the namespace_obj is a module itself, then it will be used to get the
     attribute `name`.
+
+    Notes
+    -----
+    First, checks if name is in __builtin__. Then checks if in the module's
+    namespace of the object. Then handles when given a str that is an instance
+    of an object or a literal. Beware that if the str represntation of an
+    instance exists in the namespace, then it is prioritized over the literal
+    or object instance.
     """
     try:
-        return get_builtin(name, default)
+        try:
+            return get_builtin(name, default)
+        except AttributeError as e:
+            return get_namespace_obj(getmodule(namespace_obj), name, default)
     except AttributeError as e:
-        return get_namespace_obj(getmodule(namespace_obj), name, default)
-    # TODO handle being given an instance of an object, esp. primitive.
+        return ast.literal_eval(name)
+        #raise NotImplementedError(' '.join([
+        #   'Need to support conversion of a str of an object instance or',
+        #    'literal to that actual object instance or literal.',
+        #]))#.with_traceback(e)
+        # TODO handle being given an instance of an object, esp. primitive.
+        #   When given an instance of an object, if default the type is known,
+        #   otherwise it is intended to be self-evident and as such
 
 
 class AttributeName(nodes.TextElement):
