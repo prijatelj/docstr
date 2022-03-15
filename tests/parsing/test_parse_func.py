@@ -40,6 +40,7 @@ def expected_func():
 
 @pytest.fixture
 def expected_func_defaults(expected_func):
+    expected_func.name = examples.numpy_doc_func_defaults.__name__
     expected_func.args['foo'].default = 'foo'
     expected_func.args['bar'].default = 'bar'
     return expected_func
@@ -47,6 +48,7 @@ def expected_func_defaults(expected_func):
 
 @pytest.fixture
 def expected_func_choices(expected_func_defaults):
+    expected_func_defaults.name = examples.numpy_doc_func_choices.__name__
     choices = docstring.MultiType({'foo', 'bar'})
     expected_func_defaults.args['foo'].type = choices
     expected_func_defaults.args['bar'].type = choices
@@ -55,14 +57,14 @@ def expected_func_choices(expected_func_defaults):
 
 @pytest.mark.incremental
 class TestParseFunc:
-    def test_docstr_parse_func(expected_func):
+    def test_docstr_parse_func(self, expected_func):
         parsed = parse(examples.numpy_doc_func, 'numpy')
         assert expected_func == parsed
 
-    def test_docstr_parse_func_defaults(expected_func_defaults):
+    def test_docstr_parse_func_defaults(self, expected_func_defaults):
         parsed = parse(examples.numpy_doc_func_defaults, 'numpy')
         assert expected_func_defaults == parsed
 
-    def test_docstr_parse_func_choices(expected_func_choices):
+    def test_docstr_parse_func_choices(self, expected_func_choices):
         parsed = parse(examples.numpy_doc_func_choices, 'numpy')
         assert expected_func_choices == parsed
