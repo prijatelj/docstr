@@ -170,7 +170,7 @@ class AttributeDirective(rst.Directive):
         if pop is not None:
             del content[i]
         else:
-            raise ValueError('No attribute type for {self.arguments[0]}!')
+            raise ValueError(f'No attribute type for {self.arguments[0]}!')
 
         # Parse the body content as paragraphs
         para = nodes.paragraph()
@@ -363,17 +363,29 @@ class DocstringParser(object):
 
         return '\n'.join(docstring)
 
-    def parse_func(self, obj, fname=None):
+    def parse_desc_args_returns(self, obj):
         """Parse the docstring of a function.
 
         Args
         ----
         obj : object | str
             The object whose __doc__ is to be parsed.
-        fname : str, optional
-            The name of the object whose docstring is being parsed. Only needs
-            to be supplied when the `obj` is a `str` of the docstring to be
-            parsed, otherwies not used.
+
+        Returns
+        -------
+        (
+            str,
+            OrderedDict(str:docstring.ArgDoc),
+            ValueExists.false | docstring.BaseDoc
+        )
+            The description string, parsed args or attributes, and returns.
+
+        Notes
+        -----
+        This should really be a one pass parse for everything that just handles
+        the context when it occurs. Otherwise, may remove the checks for
+        returns in the loop of fields when in class docstrings for a slight
+        speed increase.
         """
         docstring = self._parse_initial(obj.__doc__)
         # Use docutils to parse the RST (one pass... followed by more.)
@@ -384,17 +396,25 @@ class DocstringParser(object):
                 [ch.astext() for ch in doc.children[:description]]
             )
 
-        if not (field_list := doc.first_child_matching_class(
+        if (field_list := doc.first_child_matching_class(
             nodes.field_list
-        )):
-            raise ValueError('The given docstring includes no fields!')
+        )) is None:
+            # No fields
+            if (field_list := doc.first_child_matching_class(
+                AttributeBody
+            )) is None:
+                # No Attribute Body
+                raise ValueError('The given docstring includes no fields!')
 
         # The field list includes params, types, returns, and rtypes,
         field_list = doc.children[field_list]
 
+        # TODO doc linking of ALL args/attr from linked object.
+
         # Prepare the paired dicts for params to catch dups, & missing pairs
         params = OrderedDict()
         types = OrderedDict()
+        doc_linking = OrderedDict() # Breadth first traversal of docstrings
         returns = ValueExists.false
         # Go through the field_list and parse the values.
         for field in field_list:
@@ -431,14 +451,29 @@ class DocstringParser(object):
                 type_str = field.children[1].astext()
                 parsed_types = self.re_typedoc.findall(type_str)
 
-                if len(parsed_types) < 1:
+                num_parsed_types = len(parsed_types)
+                if num_parsed_types < 1:
                     raise ValueError(f'No type found in parsing: {type_str}')
 
                 if parsed_types[-1][1]:
-                    # TODO make the actual object, not its str
                     default = get_object(obj, parsed_types[-1][1])
                 else:
                     default = ValueExists.false
+
+                # Store docstring linking for this argument's ArgDoc
+                if parsed_types[0][0] == 'see':
+                    if num_parsed_types == 2:
+                        doc_linking[name] = (parsed_types[1][0], None)
+                    elif num_parsed_types == 3:
+                        doc_linking[name] = (
+                            parsed_types[1][0],
+                            parsed_types[2][0],
+                        )
+                    elif num_parsed_types > 3:
+                        raise ValueError(
+                            f'More than 3 elements for doc linking: {type_str}'
+                        )
+                    continue # TODO handle dups/missing type/param check
 
                 found_types = []
                 for found, _ in parsed_types:
@@ -488,6 +523,18 @@ class DocstringParser(object):
                         get_object(obj, field.children[1].astext()),
                     )
 
+        # TODO Perform depth first traversal specific arg doc linking.
+        for key, (linked_obj, arg_name) in doc_linking.items():
+            raise NotImplementedError('Doc linking.')
+            # TODO if already parsed, use that docstr item.
+            #   1. see another arg in the same docstr
+            #   2. see an arg in `self` (the class' attributes of `key`)
+            #   3. see an arg that has been parsed by this parser, requires a
+            #       "global" context from this parser's instance (self).
+
+            # TODO if not already parsed, parse arg_name in given object's doc
+            #   - TODO early exit parsing when only one arg is required.
+
         # Any unmatched pairs of params and types raises an error
         if xor_set := set(types) ^ set(params):
             raise ValueError(' '.join([
@@ -495,12 +542,16 @@ class DocstringParser(object):
                 f'{xor_set}',
             ]))
 
+        return description, params, returns
+
+    def parse_func(self, obj):
+        description, args, returns = self.parse_desc_args_returns(obj)
         # Return the Function Docstring Object that stores the docsting info
         return FuncDocstring(
             name=obj.__name__,
             type=FunctionType,
             description=description,
-            args=params,
+            args=args,
             returns=returns,
         )
 
@@ -524,17 +575,8 @@ class DocstringParser(object):
         methods : [str] = None
             Additional methods whose docstrings are to be parsed.
         """
-        docstring = self._parse_initial(obj.__doc__)
-
-        # Obtain the description of the class.
-        if first_section := self.re_section.search(docstring):
-            # Extract the text from beginning to first section
-            description = docstring[:first_section.span()[0]]
-        else:
-            # There are no sections in the class docstring, so it is all desc.
-            description = docstring
-
-        # TODO parse Attributes, optional, unless a dataclass or dataclass-like
+        # Parse description and attributes, ignoring returns, unless functional?
+        description, args, returns = self.parse_desc_args_returns(obj)
 
         # Obtain the class' __init__ docstring
         init_obj = getattr(obj, '__init__')
@@ -552,7 +594,7 @@ class DocstringParser(object):
                 'init w/o docstrings are not supported yet.'
             )
         else:
-            init_docstr = self.parse_func(init_obj)
+            init = self.parse_func(init_obj)
 
         # Parse all given method docstrings
         if methods:
@@ -575,8 +617,8 @@ class DocstringParser(object):
             obj.__name__,
             type(obj),
             description,
-            attributes=None, # TODO
-            init=init_docstr,
+            attributes=args,
+            init=init,
             methods=method_docstrs,
         )
 
@@ -647,7 +689,8 @@ class DocstringParser(object):
         # docstring of interest. As it defines the params to give, and thus
         # the args we care about.
         if isinstance(obj, FunctionType):
-            return self.parse_func(obj, name)
+            return self.parse_func(obj)
+            #return self.parse_func(obj, name)
 
         # elif isinstance(obj_type, type): TODO raise if not class object?
         # TODO handle detection of methods, have option ot find those with
