@@ -147,6 +147,11 @@ class NumpyDocClassLinking(NumpyDocClass):
     Other Attributes
     ----------------
     see `NumpyDocClass`
+        Allow for 1) a section of text under docstring linking of 'see', This
+        is discarded in the parsed tokens 2) for docstrings of classes w/
+        inheritance to not have to specify `see`. The latter being a parsing
+        option that will check the parent(s) docstrings for any missing
+        attributes that should persist in this child class.
     """
     def __init__(self, example_var, is_this_correct=False, *args, **kwargs):
         super(self).__init__(*args, **kwargs)

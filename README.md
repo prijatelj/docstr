@@ -4,13 +4,13 @@ The objective of docstr is to make use of properly written docstrings that would
 
 ### Design Principles
 
-- Keep it simple
-    - and functional
-- Write once
+1. Write once
     - reduce redundant code and make it so common code does not need be rewritten for the same functionality.
-- Modularity
+2. Keep it simple
+    - and functional
+3. Modularity
     - Keep as modular as possible such that each unit may be removed, replaced, or taken and plugged into a different system.
-- Efficiency
+4. Efficiency
     - efficient coding and execution
 
 #### Docstr Pipeline Use
@@ -28,11 +28,16 @@ The objective of docstr is to make use of properly written docstrings that would
     - Optionally syntax check the docstrings to the objects to ensure they match expectations, e.g., the args in doc are as they are expected by a function.
     - tokenized docstrings enable colorized docstrings in editors.
     - The tokenized objects need to be in a useful enough and general enough format that enables ease of integration into down-stream "compile" software, such as pydantic for type checking, or ConfigArgParse for CLI and config parsers.
+    - Allow for "pre-parsed" docstrings in the case where a docstring is from a 3rd party and is not supported by existing docstr parsing standards.
+        In config files, this can be specified in its own section.
 4. "**Compile**": Using the tokens, perform operations
     - Command Line Interface: argparse auto creation
     - Configuration file parser: ConfigArgParse auto creation
         - Enables Pipeline running of code if docstr is used on a class that has a run() or main().
             - may hook into or rely upon: Dagster, ray, asyncio
+        - Decorators may be applied to functions/classes in the config file
+            - this may allow for applying Ray to functions/classes.
+        - Allow for configuration files to link to other config files, if so desired.
     - Meta-programming (Reflection)
         - enabling type checking versions of the parsed code. (pydantic?)
         - splat extension for "write once".
