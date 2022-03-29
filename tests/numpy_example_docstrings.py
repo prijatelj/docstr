@@ -56,6 +56,73 @@ def numpy_doc_func_choices(foo='foo', bar='bar'):
     return foo + bar
 
 
+def numpy_doc_func_alt_defaults(foo, bar='bar'):
+    """This is the short desc. of the function, concat the paired strings
+
+    Args
+    ----
+    foo : str defaults 'foo'
+        Foo is an excellently documented string argument.
+    bar : str, optional
+        Bar is an excellently documented string argument.
+
+    Returns
+    -------
+    str
+        An incredible ordered concatenation of the paired string inputs.
+    """
+    # TODO eval on alternate defaults
+    # TODO eval on having to infer from code the default.
+    return foo + bar
+
+
+def numpy_doc_func_linking(foo, bar='bar'):
+    """This is the short desc. of the function, concat the paired strings
+
+    Args
+    ----
+    see numpy_doc_func_defaults
+
+    Returns
+    -------
+    str
+        An incredible ordered concatenation of the paired string inputs.
+    """
+    return foo + bar
+
+
+def numpy_doc_func_linking_arg_pass_thru(fooey, bar='bar'):
+    """This is the short desc. of the function, concat the paired strings
+
+    Args
+    ----
+    foo : see numpy_doc_func_defaults
+    bar : see numpy_doc_func_defaults
+
+    Returns
+    -------
+    str
+        An incredible ordered concatenation of the paired string inputs.
+    """
+    return foo + bar
+
+
+def numpy_doc_func_linking_args(boo, far='bar'):
+    """This is the short desc. of the function, concat the paired strings
+
+    Args
+    ----
+    boo : see numpy_doc_func_defaults foo
+    far : see numpy_doc_func_defaults bar
+
+    Returns
+    -------
+    str
+        An incredible ordered concatenation of the paired string inputs.
+    """
+    return boo + far
+
+
 class NumpyDocClass(object):
     """This is an example class with Numpy docstrings. Short description ends.
     This is the beginning of the long descriptions, which can essentially be
@@ -97,7 +164,7 @@ class NumpyDocClass(object):
             Second number in summation.
         x : int | float = 8
             First number in multiplication.
-        y : int | float defaults 11
+        y : int | float = 11
             Second number in multiplication. This is an example of alternative
             specification of default. This support is included in order to be
             more inclusive of pre-existing standards used by others so that
