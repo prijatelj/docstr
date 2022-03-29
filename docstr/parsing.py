@@ -23,6 +23,7 @@ from docstr.docstring import (
     ClassDocstring,
     FuncDocstring,
     BaseDoc,
+    Namespace,
 )
 
 # Modify `sphinxcontrib.napoleon` to include `exputils` mod to Numpy style
@@ -249,8 +250,35 @@ class DocstringParser(object):
         The style expected to parse.
     doc_linking : bool = False
     config : sphinx.ext.napoleon.Config = None
+    parsed_tokens : dict(key: DocString)
+        The already parsed tokens such that they are accessible to expedite
+        future doc parsing due to doc linking by avoiding reparsing docstrings.
+
+        Should we do this?
+        This object is structured such that the root docstr namespace is the
+        root of this parsed token tree. This is traversable via namespace
+        calling, e.g., `parsed_class.parsed_argument`. So if a function, the
+        arguments are able to be accessed from `function.arg1`. If a class,
+        the arguments to the init method are able to be called as
+        `class.__init__.arg` and attributes as `class.attr`.
+    namespace : Namespace = None
+        The root namespace of this docstr parser. It will expand as the parser
+        progresses. It is preset in the case of a docstr configuraiton file's
+        imports. If there is no hit in the namespace of the docstring's own
+        module, then this is used.
+
+        Set to None when there is no additional namespace information.
+        TODO: for now, expect all docstrings encountered to specify thier own
+        expected namespaces and things for objects.
     """
-    def __init__(self, style, doc_linking=False, config=None):
+    def __init__(
+        self,
+        style,
+        doc_linking=False,
+        config=None,
+        #TODO whitelist=None,
+        #TODO blacklist=None,
+    ):
         """
         Args
         ----
@@ -262,6 +290,13 @@ class DocstringParser(object):
             Not Implemented Yet
         config : sphinx.ext.napoleon.Config = None
             Not Implemented Yet
+        whitelist: {str} = None
+            Whitelisted modules by their str namespace identifier, meaning
+            no other objects outside said modules may be parsed.
+        blacklist: {str} = None
+            Blacklisted objects by their str namespace identifier, meaning
+            these objects will not be parsed. If given a module, then the
+            entire hierarchy below it will be ignored.
         """
         style = style.lower()
         if style not in {'rst', 'numpy', 'google'}:
@@ -336,6 +371,18 @@ class DocstringParser(object):
 
         # Register AttributeDirective once for this parser.
         rst.directives.register_directive('attribute', AttributeDirective)
+
+        self.parsed_tokens = {}
+        self.namespace = None
+
+    def _get_object(self, namespace_obj, name, default=ValueExists.false):
+        """Wraps get_object with a fallback to this parser's namespace"""
+        try:
+            return get_object(namespace_obj, name, default)
+        except Exception as e:
+            # TODO add the above exception to the stack trace of the following
+            if self.namespace is not None:
+                return get_namespace_obj(self.namespace, name, default)
 
     def _parse_initial(self, docstring):
         """Internal util for pasring inital portion of docstring."""
@@ -416,6 +463,7 @@ class DocstringParser(object):
         types = OrderedDict()
         doc_linking = OrderedDict() # Breadth first traversal of docstrings
         returns = ValueExists.false
+
         # Go through the field_list and parse the values.
         for field in field_list:
             field_name = field.children[0].astext()
@@ -456,7 +504,7 @@ class DocstringParser(object):
                     raise ValueError(f'No type found in parsing: {type_str}')
 
                 if parsed_types[-1][1]:
-                    default = get_object(obj, parsed_types[-1][1])
+                    default = self._get_object(obj, parsed_types[-1][1])
                 else:
                     default = ValueExists.false
 
@@ -477,7 +525,7 @@ class DocstringParser(object):
 
                 found_types = []
                 for found, _ in parsed_types:
-                    found_types.append(get_object(obj, found))
+                    found_types.append(self._get_object(obj, found))
 
                 if len(found_types) > 1:
                     found_types = MultiType(set(found_types))
@@ -515,12 +563,15 @@ class DocstringParser(object):
                         or returns.type != ValueExists.false:
                         raise KeyError('Multiple `rtype` fields exist!')
                     # TODO Namespace grabbing of types... not just store str
-                    returns.type = get_object(obj, field.children[1].astext())
+                    returns.type = self._get_object(
+                        obj,
+                        field.children[1].astext(),
+                    )
                 else:
                     # TODO Namespace grabbing of types... not just store str
                     returns = BaseDoc(
                         '',
-                        get_object(obj, field.children[1].astext()),
+                        self._get_object(obj, field.children[1].astext()),
                     )
 
         # TODO Perform depth first traversal specific arg doc linking.
@@ -528,7 +579,12 @@ class DocstringParser(object):
             raise NotImplementedError('Doc linking.')
             # TODO if already parsed, use that docstr item.
             #   1. see another arg in the same docstr
+            #       This applies for `self` when in class' docstr, otherwise
+            #       this checks if an already parsed docstring exists.
+            #       Probably should prevent silly multi-hop sees in this case.
             #   2. see an arg in `self` (the class' attributes of `key`)
+            #       In case of __init__, likely attributes already parsed.
+            #       If not, then grab class' docstr from this obj
             #   3. see an arg that has been parsed by this parser, requires a
             #       "global" context from this parser's instance (self).
 
