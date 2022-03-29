@@ -258,3 +258,9 @@ class ClassDocstring(Docstring):
         # TODO set args from __init__
 
         return parser
+
+# TODO consider making a namespace object that is the root of Docstr's parsed
+# tokens and allows for easy querying of namespace paths within it.
+class Namespace(object):
+    """Docstr's internal namespace representation object."""
+    def __init__(self): pass
