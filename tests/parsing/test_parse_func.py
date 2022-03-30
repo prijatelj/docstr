@@ -185,7 +185,16 @@ def test_func_alt_defaults(self, expected_func_alt_defaults):
 
 
 @pytest.mark.dependency(depends=['parse_defaults_choices'])
-class TestParseFuncDocLinking:
+class TestParseFuncRecursiveParsing:
+    """Recursive parsing of objects within parsed types that are whitelisted"""
+    def test_recursive_parsing_types_1hop(self):
+        pass
+
+
+@pytest.mark.dependency(depends=['parse_defaults_choices'])
+@pytest.mark.xfail
+class TestParseFuncDocLinkingSee:
+    """Doc linking through the use of shortcut linking by `see`"""
     def test_docstr_parse_func_linking(self, expected_func_linking):
         parsed = parse(examples.numpy_doc_func_linking, 'numpy')
         assert expected_func_linking == parsed
