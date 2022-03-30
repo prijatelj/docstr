@@ -579,13 +579,13 @@ class DocstringParser(object):
         for key, (linked_obj, arg_name) in doc_linking.items():
             raise NotImplementedError('Doc linking.')
             # TODO if already parsed, use that docstr item.
-            #   1. see another arg in the same docstr
+            #   1. see another arg in the same docstr (will be parsed by now)
             #       This applies for `self` when in class' docstr, otherwise
             #       this checks if an already parsed docstring exists.
             #       Probably should prevent silly multi-hop sees in this case.
             #   2. see an arg in `self` (the class' attributes of `key`)
             #       In case of __init__, likely attributes already parsed.
-            #       If not, then grab class' docstr from this obj
+            #       If not, then grab class' docstr from this obj.
             #   3. see an arg that has been parsed by this parser, requires a
             #       "global" context from this parser's instance (self).
 
