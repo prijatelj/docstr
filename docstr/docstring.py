@@ -4,7 +4,6 @@ From these tokens, syntax checking as well as "compile" actions may occur.
 """
 from enum import Flag, unique
 from collections import OrderedDict
-from collections.abc import Set # MutableSet
 from dataclasses import dataclass, InitVar
 from keyword import iskeyword
 
@@ -36,6 +35,9 @@ import configargparse
 # handeld by parsing their docstrings... when automating the loading of
 # classes. Just keep it in mind, and note that Factories make sense when the
 # sub classes, say a bunch of different torch.modules or tf.keras.models
+#   naive solution is the factory has a docstr so give it to docstr to parse.
+
+# TODO Go from these tokens to a "compiled" object.
 
 @unique
 class ValueExists(Flag):
@@ -44,12 +46,11 @@ class ValueExists(Flag):
     false = False
 
 
-#class MultiType(MutableSet):
 # NOTE may use typing.Literal for this? Intended for checking return types, but
 # perhaps this as well in cases where literal instances are expected?
 @dataclass
 class MultiType:
-    """A list of multiple types for when a variable may take multiple types."""
+    """A set of multiple types for when a variable may take multiple types."""
     types : set
 
     # TODO handle some internal assessment property that notes if this is a
@@ -263,4 +264,5 @@ class ClassDocstring(Docstring):
 # tokens and allows for easy querying of namespace paths within it.
 class Namespace(object):
     """Docstr's internal namespace representation object."""
-    def __init__(self): pass
+    def __init__(self):
+        pass
