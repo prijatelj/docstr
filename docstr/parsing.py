@@ -470,6 +470,7 @@ class DocstringParser(object):
         # Prepare the paired dicts for params to catch dups, & missing pairs
         params = OrderedDict()
         types = OrderedDict()
+        recursive_parse = {}
         doc_linking = OrderedDict() # Breadth first traversal of docstrings
         returns = ValueExists.false
 
@@ -585,7 +586,17 @@ class DocstringParser(object):
 
 
         # TODO Recursively parse docs of valid types w/in whitelist, error o.w.
+        for arg in recursive_parse:
+            raise NotImplementedError('Recursive parse of objects w/in types')
+            # TODO at every _get_object, there is a chance that the object is
+            # an object able to be configured.
 
+            # TODO Check if in whitelist, error otherwise
+
+            # TODO Recursively parse the object
+            self.parse(linked_obj, doc_linking_depth=doc_linking_depth + 1)
+
+            # TODO Update params and types once parsed.
 
 
 
