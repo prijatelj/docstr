@@ -250,9 +250,10 @@ class DocstringParser(object):
         The style expected to parse.
     doc_linking : bool = False
     config : sphinx.ext.napoleon.Config = None
-    parsed_tokens : dict(key: DocString)
-        The already parsed tokens such that they are accessible to expedite
-        future doc parsing due to doc linking by avoiding reparsing docstrings.
+    parsed_tokens : dict(str: DocString)
+        The already parsed tokens such that they are accessible by their docstr
+        parser namespace to expedite future doc parsing due to doc linking by
+        avoiding reparsing docstrings.
 
         Should we do this?
         This object is structured such that the root docstr namespace is the
@@ -687,7 +688,8 @@ class DocstringParser(object):
         style=None,
         doc_linking=False,
     ):
-        """General parsing of a given object with a __doc__ attribute.
+        """General parsing of a given object with a __doc__ attribute or a
+        configuration file.
 
         Args
         ----
@@ -751,7 +753,10 @@ class DocstringParser(object):
         # elif isinstance(obj_type, type): TODO raise if not class object?
         # TODO handle detection of methods, have option ot find those with
         # docs, warn when encountering those without docs.
-        return self.parse_class(obj, name, obj_type)
+        #return self.parse_class(obj, name, obj_type)
+        return self.parse_class(obj)
+
+        # TODO parse_config
 
 
 def parse(obj, *args, **kwargs):
