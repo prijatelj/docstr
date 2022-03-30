@@ -165,6 +165,30 @@ def numpy_doc_func_linking_see_start(
     return foo + bar + fizz + buzz
 
 
+def numpy_doc_func_linking_see_mid(
+    fizz,
+    foo='foo',
+    bar='bar',
+    buzz='buzz',
+):
+    """This is the short desc. of the function, concat the paired strings
+
+    Args
+    ----
+    fizz: str
+        An excellently documented string argument.
+    see numpy_doc_func_defaults
+    buzz: 'fizz' | 'buzz' = 'buzz'
+        An excellently documented string argument.
+
+    Returns
+    -------
+    str
+        An incredible ordered concatenation of the ordered string inputs.
+    """
+    return fizz + foo + bar + buzz
+
+
 class NumpyDocClass(object):
     """This is an example class with Numpy docstrings. Short description ends.
     This is the beginning of the long descriptions, which can essentially be

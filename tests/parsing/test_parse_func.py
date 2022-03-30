@@ -138,6 +138,28 @@ def expected_func_linking_see_start(expected_func_defaults):
     return expected_func_defaults
 
 
+@pytest.fixture
+def expected_func_linking_see_mid(expected_func_defaults):
+    expected_func_defaults.name = examples.numpy_doc_func_linking_see_mid.__name__
+    expected_func_defaults.returns.description = \
+        'An incredible ordered concatenation of the ordered string inputs.'
+    desc = 'An excellently documented string argument.'
+
+    new_args = OrderedDict(fizz=docstring.ArgDoc('fizz', str, desc))
+
+    new_args.update(expected_func_defaults.args)
+
+    new_args['buzz'] = docstring.ArgDoc(
+        'buzz',
+        docstring.MultiType({'fizz', 'buzz'}),
+        desc,
+        'buzz',
+    )
+    expected_func_defaults.args = new_args
+
+    return expected_func_defaults
+
+
 @pytest.mark.dependency(name='parse_defaults_choices', scope='session')
 @pytest.mark.incremental
 class TestParseFunc:
@@ -186,3 +208,7 @@ class TestParseFuncDocLinking:
     def test_func_linking_see_start(self, expected_func_linking_see_start):
         parsed = parse(examples.numpy_doc_func_linking_see_start, 'numpy')
         assert expected_func_linking_see_start == parsed
+
+    def test_func_linking_see_mid(self, expected_func_linking_see_mid):
+        parsed = parse(examples.numpy_doc_func_linking_see_mid, 'numpy')
+        assert expected_func_linking_see_mid == parsed
