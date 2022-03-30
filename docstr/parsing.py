@@ -257,7 +257,8 @@ class DocstringParser(object):
 
         When an object is encountered to be parsed, it is added to this
         dictionary with a value of ValueExists.false to denote it is in the
-        process of being parsed.
+        process of being parsed. This means only objects with __doc__ are
+        included here, not individual ArgDocs.
 
         Should we do this? Naw, use fully qualified python name for simplicity
         This object is structured such that the root docstr namespace is the
@@ -582,9 +583,15 @@ class DocstringParser(object):
                         self._get_object(obj, field.children[1].astext()),
                     )
 
-        # TODO Perform depth first traversal specific arg doc linking.
+
+        # TODO Recursively parse docs of valid types w/in whitelist, error o.w.
+
+
+
+
+        # TODO Perform depth first traversal specific arg doc linking via see.
         for key, (linked_obj, arg_name) in doc_linking.items():
-            raise NotImplementedError('Doc linking.')
+            raise NotImplementedError('Doc linking via `see`.')
             # TODO if already parsed, use that docstr item.
             #   1. see another arg in the same docstr (will be parsed by now)
             #       This applies for `self` when in class' docstr, otherwise
@@ -622,7 +629,7 @@ class DocstringParser(object):
                 raise NotImplementedError('Doc linking to parsed token.')
             else: # TODO New, unencountered object to be parsed, recursively
                 linked_obj = self._get_object(correct_namespace, linked_obj)
-                self.parse(linked_obj, doc_linking_depth=doc_linking_depth)
+                self.parse(linked_obj, doc_linking_depth=doc_linking_depth + 1)
 
         # Any unmatched pairs of params and types raises an error
         if xor_set := set(types) ^ set(params):
