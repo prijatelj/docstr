@@ -251,11 +251,15 @@ class DocstringParser(object):
     doc_linking : bool = False
     config : sphinx.ext.napoleon.Config = None
     parsed_tokens : dict(str: DocString)
-        The already parsed tokens such that they are accessible by their docstr
-        parser namespace to expedite future doc parsing due to doc linking by
-        avoiding reparsing docstrings.
+        The already parsed tokens such that they are accessible by their fully
+        qualified name as in python to expedite future doc parsing due to doc
+        linking by avoiding reparsing docstrings.
 
-        Should we do this?
+        When an object is encountered to be parsed, it is added to this
+        dictionary with a value of ValueExists.false to denote it is in the
+        process of being parsed.
+
+        Should we do this? Naw, use fully qualified python name for simplicity
         This object is structured such that the root docstr namespace is the
         root of this parsed token tree. This is traversable via namespace
         calling, e.g., `parsed_class.parsed_argument`. So if a function, the
@@ -275,7 +279,7 @@ class DocstringParser(object):
     def __init__(
         self,
         style,
-        doc_linking=False,
+        doc_linking_depth=0,
         config=None,
         #TODO whitelist=None,
         #TODO blacklist=None,
@@ -287,8 +291,9 @@ class DocstringParser(object):
             The docstring style to expect when parsing. Default choices are
             {'numpy', 'google', 'rest'}, although any string may be given as
             long as there is a sphinx style conversion extention available.
-        doc_linking : bool = False
-            Not Implemented Yet
+        doc_linking_depth : int = 0
+            The maximum allowed number of docstring linking recursive function
+            calls to `self.parse()`.
         config : sphinx.ext.napoleon.Config = None
             Not Implemented Yet
         whitelist: {str} = None
@@ -307,7 +312,7 @@ class DocstringParser(object):
         # TODO allow the passing of a func/callable to transform custom doc
         # styles, thus allowing users to easily adapt to their doc style
         self.style = style
-        self.doc_linking = doc_linking
+        self.doc_linking_depth = doc_linking_depth
 
         if config is None:
             self.config = Config(
@@ -411,7 +416,7 @@ class DocstringParser(object):
 
         return '\n'.join(docstring)
 
-    def parse_desc_args_returns(self, obj):
+    def parse_desc_args_returns(self, obj, doc_linking_depth=0):
         """Parse the docstring of a function.
 
         Args
@@ -458,6 +463,8 @@ class DocstringParser(object):
         field_list = doc.children[field_list]
 
         # TODO doc linking of ALL args/attr from linked object.
+        qualified_name = f'{obj.__module__}.{obj.__name__}'
+        self.parsed_tokens[qualified_name] = ValueExists.false
 
         # Prepare the paired dicts for params to catch dups, & missing pairs
         params = OrderedDict()
@@ -585,24 +592,51 @@ class DocstringParser(object):
             #       Probably should prevent silly multi-hop sees in this case.
             #   2. see an arg in `self` (the class' attributes of `key`)
             #       In case of __init__, likely attributes already parsed.
-            #       If not, then grab class' docstr from this obj.
+            #       If not, then grab class' docstr from this obj. If not a
+            #       method then throw an error.
             #   3. see an arg that has been parsed by this parser, requires a
             #       "global" context from this parser's instance (self).
 
             # TODO if not already parsed, parse arg_name in given object's doc
             #   - TODO early exit parsing when only one arg is required.
 
+
+            # TODO 1. check local (in this object)
+            # TODO 2. check obj's module for linked_obj
+            # TODO 3. check if a fully qualified name
+            # Obtain the full qualified name of the linked object.
+            #qname = TODO
+
+            # TODO note that the final item on the namespace chain could be an
+            # attribute of a class or an argument! We probably do not want to
+            # support linked_obj arg_name to avoid unnecessry expressivity and
+            # keep with following standards for namespaces.
+
+            # Throw error if infinite looping of doc linking
+            if qname in self.parsed_tokens:
+                if self.parsed_tokens[qname] == ValueExists.false:
+                    raise ValueError(
+                        f'`{qname}` is parsing. Infinite Loop in doc linking.'
+                    )
+                # Use the parsed object to complete or as the ArgDoc
+                raise NotImplementedError('Doc linking to parsed token.')
+            else: # TODO New, unencountered object to be parsed, recursively
+                linked_obj = self._get_object(correct_namespace, linked_obj)
+                self.parse(linked_obj, doc_linking_depth=doc_linking_depth)
+
         # Any unmatched pairs of params and types raises an error
         if xor_set := set(types) ^ set(params):
-            raise ValueError(' '.join([
-                'There are unmatched params and types in the docstring:',
-                f'{xor_set}',
-            ]))
+            raise ValueError(
+                f'Unmatched params and types in the docstring: {xor_set}'
+            )
 
         return description, params, returns
 
-    def parse_func(self, obj):
-        description, args, returns = self.parse_desc_args_returns(obj)
+    def parse_func(self, obj, doc_linking_depth=0):
+        description, args, returns = self.parse_desc_args_returns(
+            obj,
+            doc_linking_depth=doc_linking_depth,
+        )
         # Return the Function Docstring Object that stores the docsting info
         return FuncDocstring(
             name=obj.__name__,
@@ -618,6 +652,7 @@ class DocstringParser(object):
         name=None,
         obj_type=ValueExists.false,
         methods=None,
+        doc_linking_depth=0,
     ):
         """Parse the given class, obtaining its attributes and given functions.
 
@@ -651,7 +686,10 @@ class DocstringParser(object):
                 'init w/o docstrings are not supported yet.'
             )
         else:
-            init = self.parse_func(init_obj)
+            init = self.parse_func(
+                init_obj,
+                doc_linking_depth=doc_linking_depth,
+            )
 
         # Parse all given method docstrings
         if methods:
@@ -666,7 +704,10 @@ class DocstringParser(object):
                         f'`{obj}.{method}` is not callable: {method_obj}`'
                     )
 
-                method_docstrs[method] = self.parse_func(method_obj)
+                method_docstrs[method] = self.parse_func(
+                    method_obj,
+                    doc_linking_depth=doc_linking_depth,
+                )
         else:
             method_docstrs = None
 
@@ -686,7 +727,7 @@ class DocstringParser(object):
         obj_type=None,
         methods=None,
         style=None,
-        doc_linking=False,
+        doc_linking_depth=0,
     ):
         """General parsing of a given object with a __doc__ attribute or a
         configuration file.
@@ -725,7 +766,13 @@ class DocstringParser(object):
             or a ClassDocstring which contains the Docstring objects of the
             methods of the class along with the class' parsed Docstring object.
         """
-        # TODO optionally parallelize the parsing, perhaps with Ray?
+        if doc_linking_depth > self.doc_linking_depth:
+            raise ValueError(' '.join([
+                'Over maximum depth of doc linking function calls:',
+                f'{doc_linking_depth}/{self.doc_linking_depth}',
+            ]))
+
+        # TODO optionally parallelize the parsing, perhaps with Ray or asyncio?
         if isinstance(obj, str):
             if name is None or obj_type is None:
                 raise ValueError(' '.join([
