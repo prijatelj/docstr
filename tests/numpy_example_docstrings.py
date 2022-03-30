@@ -189,6 +189,53 @@ def numpy_doc_func_linking_see_mid(
     return fizz + foo + bar + buzz
 
 
+def numpy_doc_func_linking_local(foo='foo', bar='foo'):
+    """Doc linking to an arg within the local context, another arg.
+
+    Args
+    ----
+    foo : str = 'foo'
+        An excellently documented string argument.
+    bar : see foo
+
+    Returns
+    -------
+    str
+        An incredible ordered concatenation of the ordered string inputs.
+    """
+    return foo + bar
+
+
+def numpy_doc_func_linking_1hop(foo='foo', bar='foo'):
+    """Doc linking with 1 recursive hop, where a local see occurs.
+
+    Args
+    ----
+    see numpy_doc_func_linking_local
+
+    Returns
+    -------
+    str
+        An incredible ordered concatenation of the ordered string inputs.
+    """
+    return foo + bar
+
+
+def numpy_doc_func_linking_2hop(foo='foo', bar='foo'):
+    """Doc linking with 2 recursive hops, where a local see occurs at the end.
+
+    Args
+    ----
+    see numpy_doc_func_linking_1hop
+
+    Returns
+    -------
+    str
+        An incredible ordered concatenation of the ordered string inputs.
+    """
+    return foo + bar
+
+
 class NumpyDocClass(object):
     """This is an example class with Numpy docstrings. Short description ends.
     This is the beginning of the long descriptions, which can essentially be
