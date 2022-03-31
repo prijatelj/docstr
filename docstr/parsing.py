@@ -280,7 +280,7 @@ class DocstringParser(object):
     def __init__(
         self,
         style,
-        doc_linking_depth=0,
+        recursion_limit=None,
         config=None,
         #TODO whitelist=None,
         #TODO blacklist=None,
@@ -292,9 +292,10 @@ class DocstringParser(object):
             The docstring style to expect when parsing. Default choices are
             {'numpy', 'google', 'rest'}, although any string may be given as
             long as there is a sphinx style conversion extention available.
-        doc_linking_depth : int = 0
-            The maximum allowed number of docstring linking recursive function
-            calls to `self.parse()`.
+        recursion_limit : int = 0
+            The maximum allowed number of recursive function calls to
+            `self.parse()` either due to types being objects with docstrings to
+            parse or due to doc linking with `see`.
         config : sphinx.ext.napoleon.Config = None
             Not Implemented Yet
         whitelist: {str} = None
@@ -313,7 +314,12 @@ class DocstringParser(object):
         # TODO allow the passing of a func/callable to transform custom doc
         # styles, thus allowing users to easily adapt to their doc style
         self.style = style
-        self.doc_linking_depth = doc_linking_depth
+        if recursion_limit is None:
+            self.recursion_limit = sys.getrecursionlimit()
+        elif isinstance(recursion_limit, int):
+            self.recursion_limit = recursion_limit
+        else:
+            raise TypeError(f'Expected type int, not {type(recursion_limit)}')
 
         if config is None:
             self.config = Config(
@@ -417,7 +423,7 @@ class DocstringParser(object):
 
         return '\n'.join(docstring)
 
-    def parse_desc_args_returns(self, obj, doc_linking_depth=0):
+    def parse_desc_args_returns(self, obj, recursion_limit=0):
         """Parse the docstring of a function.
 
         Args
@@ -594,7 +600,7 @@ class DocstringParser(object):
             # TODO Check if in whitelist, error otherwise
 
             # TODO Recursively parse the object
-            self.parse(linked_obj, doc_linking_depth=doc_linking_depth + 1)
+            self.parse(linked_obj, recursion_limit=recursion_limit + 1)
 
             # TODO Update params and types once parsed.
 
@@ -640,7 +646,7 @@ class DocstringParser(object):
                 raise NotImplementedError('Doc linking to parsed token.')
             else: # TODO New, unencountered object to be parsed, recursively
                 linked_obj = self._get_object(correct_namespace, linked_obj)
-                self.parse(linked_obj, doc_linking_depth=doc_linking_depth + 1)
+                self.parse(linked_obj, recursion_limit=recursion_limit + 1)
 
         # Any unmatched pairs of params and types raises an error
         if xor_set := set(types) ^ set(params):
@@ -650,10 +656,10 @@ class DocstringParser(object):
 
         return description, params, returns
 
-    def parse_func(self, obj, doc_linking_depth=0):
+    def parse_func(self, obj, recursion_limit=0):
         description, args, returns = self.parse_desc_args_returns(
             obj,
-            doc_linking_depth=doc_linking_depth,
+            recursion_limit=recursion_limit,
         )
         # Return the Function Docstring Object that stores the docsting info
         return FuncDocstring(
@@ -670,7 +676,7 @@ class DocstringParser(object):
         name=None,
         obj_type=ValueExists.false,
         methods=None,
-        doc_linking_depth=0,
+        recursion_limit=0,
     ):
         """Parse the given class, obtaining its attributes and given functions.
 
@@ -706,7 +712,7 @@ class DocstringParser(object):
         else:
             init = self.parse_func(
                 init_obj,
-                doc_linking_depth=doc_linking_depth,
+                recursion_limit=recursion_limit,
             )
 
         # Parse all given method docstrings
@@ -724,7 +730,7 @@ class DocstringParser(object):
 
                 method_docstrs[method] = self.parse_func(
                     method_obj,
-                    doc_linking_depth=doc_linking_depth,
+                    recursion_limit=recursion_limit,
                 )
         else:
             method_docstrs = None
@@ -745,7 +751,7 @@ class DocstringParser(object):
         obj_type=None,
         methods=None,
         style=None,
-        doc_linking_depth=0,
+        recursion_limit=0,
     ):
         """General parsing of a given object with a __doc__ attribute or a
         configuration file.
@@ -784,10 +790,10 @@ class DocstringParser(object):
             or a ClassDocstring which contains the Docstring objects of the
             methods of the class along with the class' parsed Docstring object.
         """
-        if doc_linking_depth > self.doc_linking_depth:
+        if recursion_limit > self.recursion_limit:
             raise ValueError(' '.join([
                 'Over maximum depth of doc linking function calls:',
-                f'{doc_linking_depth}/{self.doc_linking_depth}',
+                f'{recursion_limit}/{self.recursion_limit}',
             ]))
 
         # TODO optionally parallelize the parsing, perhaps with Ray or asyncio?
