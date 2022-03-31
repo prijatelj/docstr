@@ -7,6 +7,7 @@ from copy import deepcopy
 from inspect import getmodule
 from keyword import iskeyword
 import re
+import sys
 from typing import NamedTuple
 from types import FunctionType
 
