@@ -6,6 +6,8 @@ from enum import Flag, unique
 from collections import OrderedDict
 from dataclasses import dataclass, InitVar
 from keyword import iskeyword
+from types import FunctionType
+ClassType = type
 
 import configargparse
 
@@ -70,8 +72,8 @@ class MultiType:
 @dataclass
 class BaseDoc:
     """Dataclass for the base components of every parsed docstring object."""
-    name : str
-    type : object = ValueExists.false
+    name : str = ValueExists.false
+    type : type = ValueExists.false
     description : str = ValueExists.false
 
 
@@ -135,21 +137,25 @@ class ArgDoc(BaseDoc):
         # TODO check arg value to check arg dependencies on the value of other
         # args.
 
-
 @dataclass
-class Docstring(BaseDoc):
-    """The docstring components of a fully parsed `__doc__`.
+class Docstring:
+    """The docstring components of a fully parsed `__doc__`."""
+    type : object = ValueExists.false
+    description : str = ValueExists.false
+    # TODO ??? other_sections: OrderedDict({str : str}) = None
 
-    Attributes
-    ----------
-    args : str
-        The function's Arguments/Args or the class' Attributes.
-    """
-    #short_description : InitVar[str] = None
-    other_sections: OrderedDict({str : str}) = None
+    # NOTE could swap type for obj and make properties type and name?
+
+    @property
+    def name(self):
+        if self.type == ValueExists.false:
+            raise ValueError('`type` was not assigned yet. Unable to get name')
+        return self.type.__name__
 
     @property
     def short_description(self):
+        if self.description == ValueExists.false:
+            raise ValueError('`description` was not assigned yet.')
         return self.description.partition('\n')[0]
 
 
@@ -162,19 +168,16 @@ class FuncDocstring(Docstring):
     args : str
         The function's Arguments/Args or the class' Attributes.
     """
+    type : InitVar[object] = ValueExists.false
     args : OrderedDict({str : ArgDoc}) = None
-    # TODO implement parsing. While some styles allow other args, whynot
-    # combine in this token?
-    #other_args : OrderedDict({str : ArgDoc}) = None
     returns : BaseDoc = ValueExists.false
 
-    #def __post_init__(self, args):
-    #    if args is None:
-    #        raise TypeError(' '.join([
-    #            'FuncDocstring() missing 1 required positional argument:',
-    #            '`args` Provide via keyword, if able to through position.',
-    #        ]))
-    #    self.args  = args
+    def __post_init__(self, type):
+        if not isinstance(type, FunctionType):
+            raise TypeError(
+                f'FuncDocstring given a type thats not FunctionType: {type}'
+            )
+        self.type = type
 
     def get_str(self, style):
         """Returns the docstring as a string in the given style. Could simply
@@ -221,13 +224,20 @@ class ClassDocstring(Docstring):
     This consists of multiple `Docstrings` that make up a class, including at
     least the class' docstring and the __init__ method's docstring.
     """
+    type : InitVar[object] = ValueExists.false
     attributes : OrderedDict({str : ArgDoc}) = None
     init : InitVar[FuncDocstring] = None
     methods : {str: FuncDocstring} = None
 
-    def __post_init__(self, init):
+    def __post_init__(self, type, init):
         # TODO attributes are unnecessary for bare min config. uses init or
         # load-like function, but is useful for type checking.
+
+        if not isinstance(type, ClassType):
+            raise TypeError(
+                f'ClassDocstring given a type thats not `type`: {type}'
+            )
+        self.type = type
 
         if init is None:
             raise TypeError(' '.join([
@@ -251,7 +261,7 @@ class ClassDocstring(Docstring):
                 self.short_description,
             )
 
-        init_parser = self.init_docstring.get_parser(parser)
+        #init_parser = self.init_docstring.get_parser(parser)
 
 
         # TODO set name, description

@@ -325,7 +325,7 @@ class DocstringParser(object):
 
         self.style = style
 
-        if isinstance(whitelist, set):
+        if whitelist is None or isinstance(whitelist, set):
             self.whitelist = whitelist
         else:
             raise TypeError(f'`whitelist` type `set`, not {type(whitelist)}')
@@ -685,9 +685,8 @@ class DocstringParser(object):
         )
         # Return the Function Docstring Object that stores the docsting info
         return FuncDocstring(
-            name=obj.__name__,
-            type=obj,
-            description=description,
+            obj,
+            description,
             args=args,
             returns=returns,
         )
@@ -758,7 +757,6 @@ class DocstringParser(object):
             method_docstrs = None
 
         return ClassDocstring(
-            obj.__name__,
             obj,
             description,
             attributes=args,
