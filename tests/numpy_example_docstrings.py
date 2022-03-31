@@ -2,7 +2,7 @@
 # TODO make Numpy and Google exhaustive examples that get converted
 
 
-def numpy_doc_func(foo, bar):
+def func(foo, bar):
     """This is the short desc. of the function, concat the paired strings
 
     Args
@@ -20,7 +20,7 @@ def numpy_doc_func(foo, bar):
     return foo + bar
 
 
-def numpy_doc_func_defaults(foo='foo', bar='bar'):
+def func_defaults(foo='foo', bar='bar'):
     """This is the short desc. of the function, concat the paired strings
 
     Args
@@ -38,7 +38,7 @@ def numpy_doc_func_defaults(foo='foo', bar='bar'):
     return foo + bar
 
 
-def numpy_doc_func_choices(foo='foo', bar='bar'):
+def func_choices(foo='foo', bar='bar'):
     """This is the short desc. of the function, concat the paired strings
 
     Args
@@ -56,7 +56,7 @@ def numpy_doc_func_choices(foo='foo', bar='bar'):
     return foo + bar
 
 
-def numpy_doc_func_alt_defaults(foo='foo', bar='bar'):
+def func_alt_defaults(foo='foo', bar='bar'):
     """This is the short desc. of the function, concat the paired strings
 
     Args
@@ -76,12 +76,31 @@ def numpy_doc_func_alt_defaults(foo='foo', bar='bar'):
     return foo + bar
 
 
-def numpy_doc_func_linking(foo='foo', bar='bar'):
+def func_recursive_parse(identifier, func_1, func_2, func_3):
+    """An example of recursive parsing of types for a run or main function.
+
+    Args
+    ----
+    identifier : str
+        String identifier for this run.
+    func_1 : func
+        The first function to be executed.
+    func_2 : func_defaults
+        The second function to be executed.
+    func_3 : func_choices
+        The third function to be executed.
+    """
+    func_1()
+    func_2()
+    func_3()
+
+
+def func_linking(foo='foo', bar='bar'):
     """This is the short desc. of the function, concat the paired strings
 
     Args
     ----
-    see numpy_doc_func_defaults
+    see func_defaults
 
     Returns
     -------
@@ -91,13 +110,13 @@ def numpy_doc_func_linking(foo='foo', bar='bar'):
     return foo + bar
 
 
-def numpy_doc_func_linking_arg_pass_thru(foo, bar='bar'):
+def func_linking_arg_pass_thru(foo, bar='bar'):
     """This is the short desc. of the function, concat the paired strings
 
     Args
     ----
-    foo : see numpy_doc_func_defaults
-    bar : see numpy_doc_func_choices
+    foo : see func_defaults
+    bar : see func_choices
 
     Returns
     -------
@@ -107,13 +126,13 @@ def numpy_doc_func_linking_arg_pass_thru(foo, bar='bar'):
     return foo + bar
 
 
-def numpy_doc_func_linking_args(boo='foo', far='bar'):
+def func_linking_args(boo='foo', far='bar'):
     """This is the short desc. of the function, concat the paired strings
 
     Args
     ----
-    boo : see numpy_doc_func_defaults.foo
-    far : see numpy_doc_func_choices.bar
+    boo : see func_defaults.foo
+    far : see func_choices.bar
 
     Returns
     -------
@@ -123,7 +142,7 @@ def numpy_doc_func_linking_args(boo='foo', far='bar'):
     return boo + far
 
 
-def numpy_doc_func_linking_see_end(fizz, buzz, foo='foo', bar='bar'):
+def func_linking_see_end(fizz, buzz, foo='foo', bar='bar'):
     """This is the short desc. of the function, concat the paired strings
 
     Args
@@ -132,7 +151,7 @@ def numpy_doc_func_linking_see_end(fizz, buzz, foo='foo', bar='bar'):
         An excellently documented string argument.
     buzz: 'fizz' | 'buzz'
         An excellently documented string argument.
-    see numpy_doc_func_defaults
+    see func_defaults
 
     Returns
     -------
@@ -141,7 +160,7 @@ def numpy_doc_func_linking_see_end(fizz, buzz, foo='foo', bar='bar'):
     """
     return fizz + buzz + foo + bar
 
-def numpy_doc_func_linking_see_start(
+def func_linking_see_start(
     foo='foo',
     bar='bar',
     fizz='fizz',
@@ -151,7 +170,7 @@ def numpy_doc_func_linking_see_start(
 
     Args
     ----
-    see numpy_doc_func_defaults
+    see func_defaults
     fizz: str = 'fizz'
         An excellently documented string argument.
     buzz: 'fizz' | 'buzz' = 'buzz'
@@ -165,7 +184,7 @@ def numpy_doc_func_linking_see_start(
     return foo + bar + fizz + buzz
 
 
-def numpy_doc_func_linking_see_mid(
+def func_linking_see_mid(
     fizz,
     foo='foo',
     bar='bar',
@@ -177,7 +196,7 @@ def numpy_doc_func_linking_see_mid(
     ----
     fizz: str
         An excellently documented string argument.
-    see numpy_doc_func_defaults
+    see func_defaults
     buzz: 'fizz' | 'buzz' = 'buzz'
         An excellently documented string argument.
 
@@ -189,7 +208,7 @@ def numpy_doc_func_linking_see_mid(
     return fizz + foo + bar + buzz
 
 
-def numpy_doc_func_linking_local(foo='foo', bar='foo'):
+def func_linking_local(foo='foo', bar='foo'):
     """Doc linking to an arg within the local context, another arg.
 
     Args
@@ -206,12 +225,12 @@ def numpy_doc_func_linking_local(foo='foo', bar='foo'):
     return foo + bar
 
 
-def numpy_doc_func_linking_1hop(foo='foo', bar='foo'):
+def func_linking_1hop(foo='foo', bar='foo'):
     """Doc linking with 1 recursive hop, where a local see occurs.
 
     Args
     ----
-    see numpy_doc_func_linking_local
+    see func_linking_local
 
     Returns
     -------
@@ -221,12 +240,12 @@ def numpy_doc_func_linking_1hop(foo='foo', bar='foo'):
     return foo + bar
 
 
-def numpy_doc_func_linking_2hop(foo='foo', bar='foo'):
+def func_linking_2hop(foo='foo', bar='foo'):
     """Doc linking with 2 recursive hops, where a local see occurs at the end.
 
     Args
     ----
-    see numpy_doc_func_linking_1hop
+    see func_linking_1hop
 
     Returns
     -------
