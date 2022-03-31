@@ -61,6 +61,11 @@ from docstr.docstring import (
 # TODO optionally set how to handle long descriptions for argparse help.
 
 
+def get_qual_name(obj):
+    """Returns the given object's fully qualified name as a str."""
+    return f'{obj.__module__}.{obj.__name__}'
+
+
 def get_namespace_obj(namespace, name, default=ValueExists.false):
     """Given a str of an object's identifier in the given object whose module
     is used as the namespace, returns the object, otherwise returns the default
@@ -281,10 +286,10 @@ class DocstringParser(object):
     def __init__(
         self,
         style,
+        whitelist=None,
+        #TODO blacklist=None,
         recursion_limit=None,
         config=None,
-        #TODO whitelist=None,
-        #TODO blacklist=None,
     ):
         """
         Args
@@ -300,8 +305,10 @@ class DocstringParser(object):
         config : sphinx.ext.napoleon.Config = None
             Not Implemented Yet
         whitelist: {str} = None
-            Whitelisted modules by their str namespace identifier, meaning
-            no other objects outside said modules may be parsed.
+            Whitelisted modules or objects by their str fully qualified
+            namespace identifier, meaning no other objects outside said modules
+            may be parsed. If a module, anything within that module's namespace
+            may be parsed. If not a module, that specific object may be parsed.
         blacklist: {str} = None
             Blacklisted objects by their str namespace identifier, meaning
             these objects will not be parsed. If given a module, then the
@@ -312,15 +319,25 @@ class DocstringParser(object):
             raise ValueError(
                 "Expected `style` = 'rst', 'numpy', or 'google', not `{style}`"
             )
+
         # TODO allow the passing of a func/callable to transform custom doc
         # styles, thus allowing users to easily adapt to their doc style
+
         self.style = style
+
+        if isinstance(whitelist, set):
+            self.whitelist = whitelist
+        else:
+            raise TypeError(f'`whitelist` type `set`, not {type(whitelist)}')
+
         if recursion_limit is None:
             self.recursion_limit = sys.getrecursionlimit()
         elif isinstance(recursion_limit, int):
             self.recursion_limit = recursion_limit
         else:
-            raise TypeError(f'Expected type int, not {type(recursion_limit)}')
+            raise TypeError(
+                f'recursion_limit type `int`, not {type(recursion_limit)}'
+            )
 
         if config is None:
             self.config = Config(
@@ -471,7 +488,7 @@ class DocstringParser(object):
         field_list = doc.children[field_list]
 
         # TODO doc linking of ALL args/attr from linked object.
-        qualified_name = f'{obj.__module__}.{obj.__name__}'
+        qualified_name = get_qual_name(obj)
         self.parsed_tokens[qualified_name] = ValueExists.false
 
         # Prepare the paired dicts for params to catch dups, & missing pairs
@@ -596,9 +613,13 @@ class DocstringParser(object):
         for arg in recursive_parse:
             raise NotImplementedError('Recursive parse of objects w/in types')
             # TODO at every _get_object, there is a chance that the object is
-            # an object able to be configured.
+            # An object able to be configured.
 
-            # TODO Check if in whitelist, error otherwise
+            # Check if in whitelist, error otherwise
+            if qname not in self.whitelist:
+                raise ValueError(
+                    f'Object not in whitelist for recursive parse: {qname}'
+                )
 
             # TODO Recursively parse the object
             self.parse(linked_obj, recursion_limit=recursion_limit + 1)
@@ -665,7 +686,7 @@ class DocstringParser(object):
         # Return the Function Docstring Object that stores the docsting info
         return FuncDocstring(
             name=obj.__name__,
-            type=FunctionType,
+            type=obj,
             description=description,
             args=args,
             returns=returns,
@@ -738,7 +759,7 @@ class DocstringParser(object):
 
         return ClassDocstring(
             obj.__name__,
-            type(obj),
+            obj,
             description,
             attributes=args,
             init=init,

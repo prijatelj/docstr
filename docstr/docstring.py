@@ -71,7 +71,7 @@ class MultiType:
 class BaseDoc:
     """Dataclass for the base components of every parsed docstring object."""
     name : str
-    type : type = ValueExists.false
+    type : object = ValueExists.false
     description : str = ValueExists.false
 
 
