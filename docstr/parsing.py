@@ -6,6 +6,7 @@ from copy import deepcopy
 #from functools import wraps
 from inspect import getmodule
 from keyword import iskeyword
+import logging
 import re
 import sys
 from typing import NamedTuple
@@ -60,10 +61,13 @@ from docstr.docstring import (
 
 # TODO optionally set how to handle long descriptions for argparse help.
 
+# TODO possible that getattr should be replaced with inspect.getattr_static in
+# some cases.
 
-def get_qual_name(obj):
+
+def get_full_qual_name(obj):
     """Returns the given object's fully qualified name as a str."""
-    return f'{obj.__module__}.{obj.__name__}'
+    return f'{obj.__module__}.{obj.__qualname__}'
 
 
 def get_namespace_obj(namespace, name, default=ValueExists.false):
@@ -118,6 +122,10 @@ def get_object(namespace_obj, name, default=ValueExists.false):
         try:
             return get_builtin(name, default)
         except AttributeError as e:
+            # TODO getmodule does not support all cases! You want to pass the
+            # locals() as seen from that args location at the beginning of its
+            # code block. The issue arises in the difference between the
+            # module's namespace versus locals() within some nested structure.
             return get_namespace_obj(getmodule(namespace_obj), name, default)
     except AttributeError as e:
         return ast.literal_eval(name)
@@ -125,6 +133,7 @@ def get_object(namespace_obj, name, default=ValueExists.false):
         #   'Need to support conversion of a str of an object instance or',
         #    'literal to that actual object instance or literal.',
         #]))#.with_traceback(e)
+
         # TODO handle being given an instance of an object, esp. primitive.
         #   When given an instance of an object, if default the type is known,
         #   otherwise it is intended to be self-evident and as such
@@ -412,6 +421,7 @@ class DocstringParser(object):
             return get_object(namespace_obj, name, default)
         except Exception as e:
             # TODO add the above exception to the stack trace of the following
+            #.with_traceback(e)
             if self.namespace is not None:
                 return get_namespace_obj(self.namespace, name, default)
 
@@ -488,7 +498,7 @@ class DocstringParser(object):
         field_list = doc.children[field_list]
 
         # TODO doc linking of ALL args/attr from linked object.
-        qualified_name = get_qual_name(obj)
+        qualified_name = get_full_qual_name(obj)
         self.parsed_tokens[qualified_name] = ValueExists.false
 
         # Prepare the paired dicts for params to catch dups, & missing pairs
@@ -658,8 +668,11 @@ class DocstringParser(object):
             # support linked_obj arg_name to avoid unnecessry expressivity and
             # keep with following standards for namespaces.
 
+            if linked_obj == 'self': # Set qname to the class object of method
+                qname = qualified_name.rpartition('.')[0]
+
             # Throw error if infinite looping of doc linking
-            if qname in self.parsed_tokens:
+            elif qname in self.parsed_tokens:
                 if self.parsed_tokens[qname] == ValueExists.false:
                     raise ValueError(
                         f'`{qname}` is parsing. Infinite Loop in doc linking.'
