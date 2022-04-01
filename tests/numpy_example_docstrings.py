@@ -335,6 +335,16 @@ class NumpyDocClass(object):
         return oh + my
 
 
+class NumpyDocClassRecursiveParse(object):
+    """A class with objects to be parsed.
+    Attr
+    ----
+
+    """
+    def __init__(self):
+        pass
+
+
 class NumpyDocClassLinking(NumpyDocClass):
     """A Numpy example class that uses docstring linking.
 
@@ -345,7 +355,7 @@ class NumpyDocClassLinking(NumpyDocClass):
 
     Other Attributes
     ----------------
-    see `NumpyDocClass`
+    see NumpyDocClass
         Allow for 1) a section of text under docstring linking of 'see', This
         is discarded in the parsed tokens 2) for docstrings of classes w/
         inheritance to not have to specify `see`. The latter being a parsing
@@ -364,7 +374,7 @@ class NumpyDocClassLinking(NumpyDocClass):
 
         Args
         ----
-        see `NumpyDocClass.foo`
+        see NumpyDocClass.foo
             Other "Args" or Other "Attributes" is not necessary, but is
             supported. TODO `see `namespace`` can simply be set under the
             args/attributes section as done so here. Also this comment is
@@ -408,7 +418,7 @@ class NumpyDocClassMultiLinking(NumpyDocClassLinking):
         This functionality is set in the function that walks the docstrings and
         generates the configargparser.
     just_for_me : bool = True
-    see `NumpyDocClassLinking`
+    see NumpyDocClassLinking
     """
     def __init__(self, custom_obj_instance, just_for_me=True, *args, **kwargs):
         custom_obj_instance = self.custom_obj_instance
