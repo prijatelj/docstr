@@ -5,6 +5,7 @@ from collections import OrderedDict
 from copy import deepcopy
 #from functools import wraps
 from inspect import getmodule
+from importlib import import_module
 from keyword import iskeyword
 import logging
 import re
@@ -635,7 +636,6 @@ class DocstringParser(object):
             self.parse(linked_obj, recursion_limit=recursion_limit + 1)
 
             # TODO Update params and types once parsed.
-
 
 
         # TODO Perform depth first traversal specific arg doc linking via see.
