@@ -41,6 +41,11 @@ import configargparse
 
 # TODO Go from these tokens to a "compiled" object.
 
+def get_full_qual_name(obj):
+    """Returns the given object's fully qualified name as a str."""
+    return f'{obj.__module__}.{obj.__qualname__}'
+
+
 @unique
 class ValueExists(Flag):
     """Enum for standing in for a non-existent default value."""
@@ -151,6 +156,12 @@ class Docstring:
         if self.type == ValueExists.false:
             raise ValueError('`type` was not assigned yet. Unable to get name')
         return self.type.__name__
+
+    @property
+    def full_qual_name(self):
+        if self.type == ValueExists.false:
+            raise ValueError('`type` was not assigned yet. Unable to get name')
+        return get_full_qual_name(self.type)
 
     @property
     def short_description(self):
