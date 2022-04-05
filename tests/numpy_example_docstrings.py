@@ -261,7 +261,7 @@ class NumpyDocClass(object):
     arbitrary text until the next section/field occurs.
 
     # TODO include MathTex/LaTeX math here to ensure parsing works with it.
-    I don't think I can use the `$` character to delimit docstr linking as
+    I don't think I can use the $ character to delimit docstr linking as
     MathTex may use it! So I need to ensure the character I use is commonly NOT
     used by other things wrt docstrings. Perhaps I could just use the markdown
     for hyperlinking, but use some indication of namespace / within code
@@ -275,10 +275,9 @@ class NumpyDocClass(object):
         The name associated with the object instance.
     a_plus_b : int | float
         The addition of two given numbers upon initialization. This also
-        includes the allowance of two types of `int` and `float`.
+        includes the allowance of two types of int and float.
     x_times_y : float
         The multiplication of two given numbers upon initialization.
-
         # TODO include markdown for LaTeX Math here as a test case of parsing.
     c : int | float
         Given number upon initialization that may be either an int or a float.
@@ -313,7 +312,7 @@ class NumpyDocClass(object):
 
     def foo(self, oh, my):
         """The foo function performs Tom foo-ery. Heh heh.
-        However the long description of `foo()` is longer than the short
+        However the long description of foo() is longer than the short
         description but still not too long to be cumbersome.
 
         Perhaps it can be too long and that's alright because it is the long
@@ -330,7 +329,7 @@ class NumpyDocClass(object):
         Returns
         -------
         str
-            Concatenate `oh` and `my` in that order.
+            Concatenate oh and my in that order.
         """
         return oh + my
 
@@ -358,7 +357,7 @@ class NumpyDocClassLinking(NumpyDocClass):
     see NumpyDocClass
         Allow for 1) a section of text under docstring linking of 'see', This
         is discarded in the parsed tokens 2) for docstrings of classes w/
-        inheritance to not have to specify `see`. The latter being a parsing
+        inheritance to not have to specify see. The latter being a parsing
         option that will check the parent(s) docstrings for any missing
         attributes that should persist in this child class.
     """
@@ -376,7 +375,7 @@ class NumpyDocClassLinking(NumpyDocClass):
         ----
         see NumpyDocClass.foo
             Other "Args" or Other "Attributes" is not necessary, but is
-            supported. TODO `see `namespace`` can simply be set under the
+            supported. TODO see namespace can simply be set under the
             args/attributes section as done so here. Also this comment is
             optional and the parsing of such links may need handled such that
             Sphinx works well with them, i.e. auto-generates them or does the
@@ -385,7 +384,7 @@ class NumpyDocClassLinking(NumpyDocClass):
         Returns
         -------
         str
-            Concatenate `my` and `oh` in that order.
+            Concatenate my and oh in that order.
         """
         return my + oh
 
@@ -396,13 +395,13 @@ class NumpyDocClassMultiLinking(NumpyDocClassLinking):
 
     An example of linking text from the long description of another docstring:
     DO QUOTING MARKDOWNFOR SPHINX:
-        $see `NumpyDocClassLinking`$
+        $see NumpyDocClassLinking$
 
     An example of linking a subset of text from the long description of another
     docstring:
     DO QUOTING MARKDOWNFOR SPHINX:
         # TODO make this the Math LaTex and hyperlinking
-        $see `NumpyDocClass`[3:5]$
+        $see NumpyDocClass[3:5]$
 
     # TODO labeled/subsection linking to avoid using indexing of long
     # description by lines?
@@ -410,7 +409,7 @@ class NumpyDocClassMultiLinking(NumpyDocClassLinking):
     Attributes
     ----------
     custom_obj_instance : NumpyDocClass
-        An example of recusrive linking without `see namespace` that allows for
+        An example of recusrive linking without see namespace that allows for
         specifying a custom class as the type and then recursively parsing that
         object, if desired, to make a complete configargparser w/ hierarchical
         namespaces.
