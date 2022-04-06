@@ -1,8 +1,8 @@
 """Tests of the compiler-like checking of docstrings to ensure they parse
 styles as they are expected and includes examples of out-of-style docstrings.
 
-NOTE
-----
+TODO FixMe
+----------
 The docutils.parse_rst() removes useful things. Future fixme.
 
 Backticks in document descriptions are not supported due to
@@ -12,6 +12,9 @@ documentaiton is not clear enough for the time I was willing to put into
 figuring that out.
 
 Removes empty lines in long descriptions, etc. for whatever reason.
+
+Docutils current implementation in docstr 0.1 requires Attributes to have an
+empty line before it to be recognized in parsing the RST...
 """
 from collections import OrderedDict
 from collections.abc import Callable
@@ -146,7 +149,7 @@ short as it wants; even non-existent.""",
     )
     return expected_class_of_primitives
 
-#@pytest.fixture
+@pytest.fixture
 def expected_class_recursive_parse():
     args = OrderedDict(
         very_useful_class=docstring.ArgDoc(

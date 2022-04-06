@@ -336,6 +336,7 @@ class NumpyDocClass(object):
 
 class NumpyDocClassRecursiveParse(object):
     """A class with objects to be parsed.
+
     Attributes
     ----------
     very_useful_class : NumpyDocClass
