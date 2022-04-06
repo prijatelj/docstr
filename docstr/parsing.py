@@ -151,13 +151,15 @@ def get_object(namespace_obj, name, default=ValueExists.false):
                 parts = name.split('.')
                 for i in range(1, len(parts)):
                     try:
-                        module = import_module('.',join(parts[:-i]))
+                        module = import_module('.'.join(parts[:-i]))
                         break
                     except ModuleNotFoundError as e:
                         continue
                 else: # Raise 1st e if no module found at all from name
                     raise e
-                return attrgetter('.'.join(name[-i:]))(module)
+                return attrgetter('.'.join(parts[-i:]))(module)
+                # TODO beware that this may return None by default rather than
+                # raise an exception!
 
 
 class AttributeName(nodes.TextElement):
@@ -446,13 +448,13 @@ class DocstringParser(object):
     def _get_object(self, namespace_obj, name, default=ValueExists.false):
         """Wraps get_object with a fallback to this parser's namespace"""
         try:
-            return get_object(namespace_obj, name, default)
+            return get_object(namespace_obj, name, default), False
         except Exception as e:
             # TODO add the above exception to the stack trace of the following
             #.with_traceback(e)
 
             if self.namespace is not None:
-                return get_namespace_obj(self.namespace, name, default)
+                return get_namespace_obj(self.namespace, name, default), True
 
     def _parse_initial(self, docstring):
         """Internal util for pasring inital portion of docstring."""
