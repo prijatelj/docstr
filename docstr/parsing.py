@@ -8,6 +8,7 @@ from inspect import getmodule
 from importlib import import_module
 from keyword import iskeyword
 import logging
+from operator import attrgetter
 import re
 import sys
 from typing import NamedTuple
@@ -119,28 +120,44 @@ def get_object(namespace_obj, name, default=ValueExists.false):
     try:
         try:
             return get_builtin(name, default)
-        except AttributeError as e:
+        except AttributeError as e_built_in:
             # TODO getmodule does not support all cases! You want to pass the
             # locals() as seen from that args location at the beginning of its
             # code block. The issue arises in the difference between the
             # module's namespace versus locals() within some nested structure.
             return get_namespace_obj(getmodule(namespace_obj), name, default)
-    except AttributeError as e:
-        return ast.literal_eval(name)
-        #raise NotImplementedError(' '.join([
-        #   'Need to support conversion of a str of an object instance or',
-        #    'literal to that actual object instance or literal.',
-        #]))#.with_traceback(e)
+    except AttributeError as e_namespace_module:
+        try:
+            return ast.literal_eval(name)
+        except Exception as e_literal_eval:
+            #raise NotImplementedError(' '.join([
+            #   'Need to support conversion of a str of an object instance or',
+            #    'literal to that actual object instance or literal.',
+            #]))#.with_traceback(e)
 
-        # TODO handle being given an instance of an object, esp. primitive.
-        #   When given an instance of an object, if default the type is known,
-        #   otherwise it is intended to be self-evident and as such
-    #except ModuleNotFoundError as e:
-    # TODO check if the given thing is an object within a module
-    #   if object in module, check if module name.rpartition('.')[0] exists
-    #       This works if the module is right before the object
-    #       If the object is a function within a class, this requires a [:-2]
-    #       of last '.' check.
+            # TODO handle being given an instance of an object, esp. primitive.
+            # When given an instance of an object, if default the type is
+            # known, otherwise it is intended to be self-evident and as such
+            #except ModuleNotFoundError as e:
+            # TODO check if the given thing is an object within a module
+            #   if object in module, check if module name.rpartition('.')[0]
+            #   exists
+            #       This works if the module is right before the object If the
+            #       object is a function within a class, this requires a [:-2]
+            #       of last '.' check.
+            try:
+                return import_module(name)
+            except ModuleNotFoundError as e:
+                parts = name.split('.')
+                for i in range(1, len(parts)):
+                    try:
+                        module = import_module('.',join(parts[:-i]))
+                        break
+                    except ModuleNotFoundError as e:
+                        continue
+                else: # Raise 1st e if no module found at all from name
+                    raise e
+                return attrgetter('.'.join(name[-i:]))(module)
 
 
 class AttributeName(nodes.TextElement):
@@ -421,6 +438,9 @@ class DocstringParser(object):
         rst.directives.register_directive('attribute', AttributeDirective)
 
         self.parsed_tokens = {}
+        #if namespace:
+        #   self.namespace = {for n in namespace}
+        #else:
         self.namespace = None
 
     def _get_object(self, namespace_obj, name, default=ValueExists.false):
@@ -430,6 +450,7 @@ class DocstringParser(object):
         except Exception as e:
             # TODO add the above exception to the stack trace of the following
             #.with_traceback(e)
+
             if self.namespace is not None:
                 return get_namespace_obj(self.namespace, name, default)
 
@@ -723,9 +744,31 @@ class DocstringParser(object):
         for i in range(see_args_count):
             see_name = f'see_{i}'
             for linked_obj in params[see_name]:
-                linked_obj = self._get_object(obj, linked_obj)
-                self.parse(linked_obj, recursion_limit=recursion_limit + 1)
-            types[see_name] = ValueExists.true
+                if linked_obj == 'self':
+                    if not isinstance(parent, OrderedDict):
+                        raise TypeError(
+                            'Given parent `see self` is not an OrderedDict'
+                        )
+                    parsed_args = deepcopy(parent)
+                else:
+                    linked_obj = self._get_object(obj, linked_obj)
+                    parsed_obj = self.parse(
+                        linked_obj,
+                        recursion_limit=recursion_limit + 1,
+                    )
+                    if isinstance(parsed_obj, ClassDocstring):
+                        parsed_args = parsed_obj.attributes
+                    else:
+                        parsed_args = parsed_obj.args
+                # TODO insert parsed args into respective location.
+                for key, val in parsed_args.items():
+                    if key in params:
+                        raise ValueError(
+                            f'Repeated arg in parsing __doc__! {key}',
+                        )
+                    params[key] = val
+                    types[key] = ValueExists.true
+            del params[see_name]
 
         # Specific arg doc linking within an object's __doc__
         if doc_linking:
