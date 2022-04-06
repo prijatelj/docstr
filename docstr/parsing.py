@@ -741,9 +741,32 @@ class DocstringParser(object):
             # TODO Update params and types once parsed.
 
         # En masse args doc linking from an object's __doc__
+        ordered_params = []
+        growing_arg_set = set(params.keys())
+        linked_obj_set = set()
         for i in range(see_args_count):
             see_name = f'see_{i}'
-            for linked_obj in params[see_name]:
+            growing_arg_set.remove(see_name)
+
+            # Preserve parsed args order
+            if next(iter(params)) == see_name: # see name is first
+                see_params = params.popitem(last=False)[1]
+            elif next(reversed(params)) == see_name: # see name is last
+                see_params = params.popitem()[1]
+                ordered_params.append(params)
+            else: # Must iterate through and find see_name, probs rarest case.
+                save_params = params.popitem(last=False)
+                save_params = OrderedDict({save_params[0]: save_params[1]})
+                key, value = params.popitem(last=False)
+                while key != see_name:
+                    save_params[key] = value
+                    key, value = params.popitem(last=False)
+                ordered_params.append(save_params)
+                see_params = value
+
+            for linked_obj in see_params:
+                if linked_obj in linked_obj_set:
+                    raise ValueError('Duplicate linked object: {linked_obj}')
                 if linked_obj == 'self':
                     if not isinstance(parent, OrderedDict):
                         raise TypeError(
@@ -761,16 +784,21 @@ class DocstringParser(object):
                     else: # FuncDocstring
                         parsed_args = parsed_obj.args
 
-                # TODO insert parsed args into respective location.
+                # Check for duplicates and update unique args and linked_objs
+                if dups := growing_arg_set & parsed_args.keys():
+                    raise ValueError('Duplicate arg name: {dups}')
+                growing_arg_set |= parsed_args.keys()
+                linked_obj_set.add(linked_obj)
 
-                for key, val in parsed_args.items():
-                    if key in params:
-                        raise ValueError(
-                            f'Repeated arg in parsing __doc__! {key}',
-                        )
-                    params[key] = val
-                    types[key] = ValueExists.true
-            del params[see_name]
+                ordered_params.append(parsed_args)
+            for key in growing_arg_set - types.keys():
+                types[key] = ValueExists.true
+
+        # Reconstruct the ordered params from the multiple param ordered dicts
+        new_params = OrderedDict()
+        for op in ordered_params:
+            new_params.update(op)
+        params = new_params
 
         # Specific arg doc linking within an object's __doc__
         if doc_linking:
