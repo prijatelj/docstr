@@ -758,9 +758,11 @@ class DocstringParser(object):
                     )
                     if isinstance(parsed_obj, ClassDocstring):
                         parsed_args = parsed_obj.attributes
-                    else:
+                    else: # FuncDocstring
                         parsed_args = parsed_obj.args
+
                 # TODO insert parsed args into respective location.
+
                 for key, val in parsed_args.items():
                     if key in params:
                         raise ValueError(
