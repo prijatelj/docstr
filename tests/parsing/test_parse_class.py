@@ -14,6 +14,7 @@ figuring that out.
 Removes empty lines in long descriptions, etc. for whatever reason.
 """
 from collections import OrderedDict
+from collections.abc import Callable
 from types import FunctionType
 
 import pytest
@@ -112,38 +113,70 @@ niche user cases may be handled by the user.""",
         # TODO default ignore?, ignore properties, allow skip_missing_doc
     )
 
-def fooey():
-        methods=dict(
-            foo=docstring.FuncDocstring(
-                examples.NumpyDocClass.foo,
-                """The foo function performs Tom foo-ery. Heh heh.
+
+@pytest.fixture
+def expected_class_of_primitives_methods(expected_class_of_primitives):
+    expected_class_of_primitives.methods=dict(
+        foo=docstring.FuncDocstring(
+            examples.NumpyDocClass.foo,
+            """The foo function performs Tom foo-ery. Heh heh.
 However the long description of foo() is longer than the short
 description but still not too long to be cumbersome.
 Perhaps it can be too long and that's alright because it is the long
 description. The long description can be as long as it wants or as
 short as it wants; even non-existent.""",
-                args=OrderedDict(
-                    oh=docstring.ArgDoc(
-                        'oh',
-                        str,
-                        'First word in the paired concatenation of string inputs.',
-                    ),
-                    my=docstring.ArgDoc(
-                        'my',
-                        str,
-                        'Second word in the paired concatenation of string inputs.',
-                    ),
-                ),
-                returns=docstring.BaseDoc(
-                    'returns',
+            args=OrderedDict(
+                oh=docstring.ArgDoc(
+                    'oh',
                     str,
-                    'Concatenate oh and my in that order.',
+                    'First word in the paired concatenation of string inputs.',
+                ),
+                my=docstring.ArgDoc(
+                    'my',
+                    str,
+                    'Second word in the paired concatenation of string inputs.',
                 ),
             ),
+            returns=docstring.BaseDoc(
+                'returns',
+                str,
+                'Concatenate oh and my in that order.',
+            ),
         ),
+    )
+    return expected_class_of_primitives
 
+#@pytest.fixture
 def expected_class_recursive_parse():
-    reutrn
+    args = OrderedDict(
+        very_useful_class=docstring.ArgDoc(
+            'very_useful_class',
+            examples.NumpyDocClass,
+            'Truly, a very useful class instance.',
+        ),
+        func_2=docstring.ArgDoc(
+            'func_2',
+            Callable,
+            "A function to be called throughout the class' use.",
+            examples.func_defaults,
+        ),
+    )
+    return docstring.ClassDocstring(
+        examples.NumpyDocClassRecursiveParse,
+        'A class with objects to be parsed.',
+        attributes=args,
+        init=docstring.FuncDocstring(
+            examples.NumpyDocClassRecursiveParse.__init__,
+            args=args,
+        ),
+    )
+
+
+@pytest.fixture
+def expected_class_recursive_parse_methods(expected_class_recursive_parse):
+    # TODO, show how to handle the run() method, if even parsed.
+    expected_class_recursive_parse.methods=dict(run='')
+    return expected_class_recursive_parse
 
 
 @pytest.fixture
@@ -158,7 +191,7 @@ def expected_class_linking(expected_class_of_primitives):
     )
     expected_class_of_primitives.methods.update(
         bar=docstring.FuncDocstring(
-            example.NumpDocClassLinking.bar,
+            examples.NumpDocClassLinking.bar,
             'Same args as foo, but performs a different operation.',
             args=expected_class_of_primitives.methods['foo'].args
         )
@@ -223,11 +256,11 @@ class TestParseClass:
         parsed = parse(examples.NumpyDocClass, 'numpy')
         assert expected_class_of_primitives == parsed
 
-    @pytest.mark.xfail
     def test_class_recursive_parse(self, expected_class_recursive_parse):
         parsed = parse(examples.NumpyDocClassRecursiveParse, 'numpy')
         assert expected_class_recursive_parse == parsed
 
+    @pytest.mark.xfail
     def test_class_doc_linking(self, expected_class_linking):
         parsed = parse(examples.NumpyDocClassLinking, 'numpy')
         assert expected_class_linking == parsed

@@ -336,12 +336,30 @@ class NumpyDocClass(object):
 
 class NumpyDocClassRecursiveParse(object):
     """A class with objects to be parsed.
-    Attr
-    ----
-
+    Attributes
+    ----------
+    very_useful_class : NumpyDocClass
+        Truly, a very useful class instance.
+    func_2 : collections.abc.Callable = func_defaults
+        A function to be called throughout the class' use.
     """
-    def __init__(self):
-        pass
+    def __init__(self, very_useful_class, func_2=None):
+        """I have a description, unlike NumpyDocClass, but whatever really.
+        I also support `see self` shorthand for all attributes are args, as
+        expected of `see namespace.path.to.object`.
+
+        Args
+        ----
+        see self
+        """
+        self.very_useful_class = very_useful_class
+        if func_2 is None:
+            self.func2 = func_defaults
+        else:
+            self.func2 = func2
+
+    def run(self, *args, **kwargs):
+        return func_2(*args, **kwargs)
 
 
 class NumpyDocClassLinking(NumpyDocClass):

@@ -115,6 +115,7 @@ def get_object(namespace_obj, name, default=ValueExists.false):
     instance exists in the namespace, then it is prioritized over the literal
     or object instance.
     """
+    #try: # Check if the given str exists in a global context
     try:
         try:
             return get_builtin(name, default)
@@ -134,6 +135,12 @@ def get_object(namespace_obj, name, default=ValueExists.false):
         # TODO handle being given an instance of an object, esp. primitive.
         #   When given an instance of an object, if default the type is known,
         #   otherwise it is intended to be self-evident and as such
+    #except ModuleNotFoundError as e:
+    # TODO check if the given thing is an object within a module
+    #   if object in module, check if module name.rpartition('.')[0] exists
+    #       This works if the module is right before the object
+    #       If the object is a function within a class, this requires a [:-2]
+    #       of last '.' check.
 
 
 class AttributeName(nodes.TextElement):
@@ -224,11 +231,11 @@ def _obj_defaults(obj, name=None, obj_type=ValueExists.false):
     name : str, optional
         The name of the object whose docstring is being parsed. Only needs
         to be supplied when the `obj` is a `str` of the docstring to be
-        parsed, otherwies not used.
+        parsed, otherwise not used.
     obj_type : type, optional
         The type of the object whose docstring is being parsed. Only needs
         to be supplied when the `obj` is a `str` of the docstring to be
-        parsed, otherwies not used.
+        parsed, otherwise not used.
 
     Returns
     -------
@@ -241,16 +248,12 @@ def _obj_defaults(obj, name=None, obj_type=ValueExists.false):
         if name is None:
             raise ValueError('`fname` must be given if `obj` is a `str`.')
         if obj_type is ValueExists.false:
-            raise ValueError(
-                '`obj_type` must be given if `obj` is a `str`.'
-            )
+            raise ValueError('`obj_type` must be given if `obj` is a `str`.')
         docstring = obj
     else:
         docstring =  obj.__doc__
         if docstring is None:
-            raise ValueError(
-                'The docstring of object `{obj}` does not exist.'
-            )
+            raise ValueError('The docstring of object `{obj}` does not exist.')
         if name is None:
             name =  obj.__name__
         if obj_type is ValueExists.false:
@@ -377,10 +380,12 @@ class DocstringParser(object):
         doc_pattern = fr'[ \t]*(?P<doc>.*?)({section_end_pattern})'
 
         # Regexes for checking and parsing the types of sections
-        self.re_param = re.compile(fr'param{name_pattern}')
+        self.re_name = re.compile(name_pattern)
+
+        #self.re_param = re.compile(fr'param({name_pattern})+')
         #self.re_type = re.compile(fr':type{name_pattern}:{doc_pattern}', re.S)
         # docutils splits name and doc pattern into field name and field body
-        self.re_type = re.compile(fr'type{name_pattern}')
+        #self.re_type = re.compile(fr'type{name_pattern}')
 
         # For parsing the inner parts of a parameter type string.
         # Captures the type or multi-types as a list
@@ -577,21 +582,27 @@ class DocstringParser(object):
         params = OrderedDict()
         types = OrderedDict()
         recursive_parse = {}
-        doc_linking = OrderedDict() # Traversal of docstrings via `see`
+        doc_linking = OrderedDict() # Traversal of docstrings args via `see`
+        see_args_count = 0
         returns = ValueExists.false
 
         # Go through the field_list and parse the values.
         for field in field_list:
             field_name = field.children[0].astext()
-            if name := self.re_param.findall(field_name):
+            if field_name[:5] == 'param':
+                name = self.re_name.findall(field_name)
                 # TODO handle python check of correct named arg/attribute
-                if len(name) > 1:
+                if name[0] == 'see':
+                    params[f'see_{see_args_count}'] = name[1:]
+                    see_args_count += 1
+                    continue
+                elif len(name) > 1:
                     raise ValueError(f'Multiple param names: {name}')
                 else:
                     name = name[0]
                 if name in params:
                     raise KeyError(f'Duplicate parameter: {name}')
-                if name in types: # Make ArgDoc w/ paired type
+                elif name in types: # Make ArgDoc w/ paired type
                     params[name] = ArgDoc(
                         name=name,
                         description=field.children[1].astext(),
@@ -603,7 +614,8 @@ class DocstringParser(object):
                         name=name,
                         description=field.children[1].astext(),
                     )
-            elif name := self.re_type.findall(field_name):
+            elif field_name[:4] == 'type':
+                name = self.re_name.findall(field_name)
                 if len(name) > 1:
                     raise ValueError(f'Multiple type param names: {name}')
                 else:
@@ -707,6 +719,15 @@ class DocstringParser(object):
 
             # TODO Update params and types once parsed.
 
+        # En masse args doc linking from an object's __doc__
+        for i in range(see_args_count):
+            see_name = f'see_{i}'
+            for linked_obj in params[see_name]:
+                linked_obj = self._get_object(obj, linked_obj)
+                self.parse(linked_obj, recursion_limit=recursion_limit + 1)
+            types[see_name] = ValueExists.true
+
+        # Specific arg doc linking within an object's __doc__
         if doc_linking:
             parent_qname = qualified_name.rpartition('.')[0]
 
