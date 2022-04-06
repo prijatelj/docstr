@@ -197,7 +197,7 @@ def expected_class_linking(expected_class_of_primitives):
     )
     expected_class_of_primitives.methods.update(
         bar=docstring.FuncDocstring(
-            examples.NumpDocClassLinking.bar,
+            examples.NumpyDocClassLinking.bar,
             'Same args as foo, but performs a different operation.',
             args=expected_class_of_primitives.methods['foo'].args
         )
