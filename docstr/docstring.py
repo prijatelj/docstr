@@ -9,7 +9,7 @@ from keyword import iskeyword
 from types import FunctionType
 ClassType = type
 
-import configargparse
+import configargparse as cap
 
 # Modify `sphinxcontrib.napoleon` to include `exputils` mod to Numpy style
 # Use respective style: `sphinxcontrib.napoleon.GoogleDocstring(docstring,
@@ -208,9 +208,9 @@ class FuncDocstring(Docstring):
         """
         raise NotImplementedError()
 
-    def get_parser(self, parser=None):
+    def get_cap(self, parser=None):
         if parser is None:
-            parser = configargparse.ArgParser(
+            parser = cap.ArgParser(
                 prog=self.name,
                 description=self.short_description,
             )
@@ -258,11 +258,11 @@ class ClassDocstring(Docstring):
             ]))
         self.init = init
 
-    def get_parser(self, parser=None):
+    def get_cap(self, parser=None):
         """Creates the argparser from the contents of the ClassDocstring."""
         # TODO set args from __init__
         if parser is None:
-            parser = configargparse.ArgParser(
+            parser = cap.ArgParser(
                 prog=self.name,
                 description=self.short_description,
             )
@@ -272,7 +272,7 @@ class ClassDocstring(Docstring):
                 self.short_description,
             )
 
-        #init_parser = self.init_docstring.get_parser(parser)
+        #init_parser = self.init_docstring.get_cap(parser)
 
 
         # TODO set name, description
