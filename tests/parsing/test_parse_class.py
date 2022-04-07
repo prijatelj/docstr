@@ -150,7 +150,7 @@ short as it wants; even non-existent.""",
     return expected_class_of_primitives
 
 @pytest.fixture
-def expected_class_recursive_parse(expected_class_of_primitives):
+def expected_class_recursive_parse():
     args = OrderedDict(
         very_useful_class=docstring.ArgDoc(
             'very_useful_class',
@@ -275,13 +275,16 @@ class TestParseClass:
         parsed = parse(examples.NumpyDocClassRecursiveParse, 'numpy')
         assert expected_class_recursive_parse == parsed
 
-    def test_class_recursive_parse_whitelist(self, expected_class_recursive_parse):
+    def test_class_recursive_parse_whitelist(
+        self,
+        expected_class_recursive_parse_whitelist,
+    ):
         parsed = parse(
             examples.NumpyDocClassRecursiveParse,
             'numpy',
             whitelist={'tests.numpy_example_docstrings.NumpyDocClass'},
         )
-        assert expected_class_recursive_parse == parsed
+        assert expected_class_recursive_parse_whitelist == parsed
 
     @pytest.mark.xfail
     def test_class_doc_linking(self, expected_class_linking):
