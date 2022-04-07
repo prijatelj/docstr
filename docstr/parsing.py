@@ -686,6 +686,11 @@ class DocstringParser(object):
                 else:
                     found_types = found_types[0]
 
+                    if self.whitelist \
+                        and get_full_qual_name(found_types) in self.whitelist:
+                        #found_types = self.parse(found_types)
+                        recursive_parse[name] = found_types
+
                 # Update the params and types
                 if name in params:
                     # Update the existing ArgDoc.
