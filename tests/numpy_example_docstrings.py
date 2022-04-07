@@ -279,12 +279,12 @@ class NumpyDocClass(object):
     x_times_y : float
         The multiplication of two given numbers upon initialization.
         # TODO include markdown for LaTeX Math here as a test case of parsing.
-    c : int | float
-        Given number upon initialization that may be either an int or a float.
+    c : int = 0
+        Number set upon initialization that increments as foo is used.
     z : float = 3.14159
         An example of an attribute with a default value, typically set in init.
     """
-    def __init__(self, name, a, b, c, x=8, y=11, z=3.14159):
+    def __init__(self, name, a, b, x=8, y=11, z=3.14159):
         """
         Args
         ----
@@ -307,8 +307,9 @@ class NumpyDocClass(object):
         self.name = name
         self.a_plus_b = a + b
         self.x_times_b = float(x * y)
-        self.c = c
         self.z = float(z)
+
+        self.c = 0
 
     def foo(self, oh, my):
         """The foo function performs Tom foo-ery. Heh heh.
@@ -331,6 +332,7 @@ class NumpyDocClass(object):
         str
             Concatenate oh and my in that order.
         """
+        self.c += 1
         return oh + my
 
 
