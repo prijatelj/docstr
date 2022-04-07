@@ -221,7 +221,15 @@ def test_func_alt_defaults(self, expected_func_alt_defaults):
 class TestParseFuncRecursiveParsing:
     """Recursive parsing of objects within parsed types that are whitelisted"""
     def test_recursive_parsing_types_1hop(self, expected_recursive_parse):
-        parsed = parse(examples.func_recursive_parse, 'numpy')
+        parsed = parse(
+            examples.func_recursive_parse,
+            'numpy',
+            whitelist={
+                'tests.numpy_example_docstrings.func',
+                'tests.numpy_example_docstrings.func_defaults',
+                'tests.numpy_example_docstrings.func_choices',
+            },
+        )
         assert expected_recursive_parse == parsed
 
 
