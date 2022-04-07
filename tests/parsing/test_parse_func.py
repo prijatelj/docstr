@@ -5,6 +5,7 @@ docstrings.
 The fixtures are the expected parsed tokens from docstr.parse.
 """
 from collections import OrderedDict
+import copy
 from types import FunctionType
 
 import pytest
@@ -41,6 +42,7 @@ def expected_func():
 
 @pytest.fixture
 def expected_func_defaults(expected_func):
+    expected_func_defaults = copy.deepcopy(expected_func)
     expected_func.type = examples.func_defaults
     expected_func.args['foo'].default = 'foo'
     expected_func.args['bar'].default = 'bar'
@@ -49,6 +51,7 @@ def expected_func_defaults(expected_func):
 
 @pytest.fixture
 def expected_func_choices(expected_func_defaults):
+    expected_func_defaults = copy.deepcopy(expected_func_defaults)
     expected_func_defaults.type = examples.func_choices
     choices = docstring.MultiType({'foo', 'bar'})
     expected_func_defaults.args['foo'].type = choices
@@ -58,6 +61,7 @@ def expected_func_choices(expected_func_defaults):
 
 @pytest.fixture
 def expected_func_alt_defaults(expected_func_defaults):
+    expected_func_defaults = copy.deepcopy(expected_func_defaults)
     expected_func_defaults.type = examples.func_alt_defaults
     return expected_func_defaults
 
