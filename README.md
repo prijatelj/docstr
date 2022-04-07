@@ -1,4 +1,4 @@
-## Docstr : Docstring Parsing for Expedient Programming
+## Docstr : Docstring Parsing for Maximizing Writing Only Once
 
 The objective of docstr is to make use of properly written docstrings that would be used to create auto-docs through Sphinx and leverage them at runtime to expedite certain programming practices, such as the creation of arg and config parsers, the modular configuration of OOP pipelines, and for leveraging the accurate dpcstrings to reduce text duplication in code.
 
