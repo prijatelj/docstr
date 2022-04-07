@@ -1,0 +1,19 @@
+# A test configuration file for a run using the Numpy example classes.
+
+docstr: # Optional container for all docstr specifc configuraitons.
+  doc_style: numpy
+  from import:
+    tests.numpy_example_docstrings:
+      - func_choices
+      - NumpyDocClass
+      - NumpyDocClassRecursiveParse
+  main: NumpyDocClassRecursiveParse.run
+
+NumpyDocClassRecursiveParse:
+  very_useful_class:
+    NumpyDocClass:
+      name: Hello World!
+      a: 3.14
+      b: 8
+      x: 100
+  func_2: func_choices
