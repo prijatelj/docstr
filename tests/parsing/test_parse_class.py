@@ -149,6 +149,7 @@ short as it wants; even non-existent.""",
     )
     return expected_class_of_primitives
 
+
 @pytest.fixture
 def expected_class_recursive_parse():
     args = OrderedDict(
@@ -183,7 +184,10 @@ def expected_class_recursive_parse_whitelist(
     expected_class_of_primitives,
     expected_class_recursive_parse,
 ):
-    expected_class_recursive_parse.type = expected_class_of_primitives
+    expected_class_recursive_parse.attributes['very_useful_class'].type = \
+        expected_class_of_primitives
+    expected_class_recursive_parse.init.args['very_useful_class'].type = \
+        expected_class_of_primitives
     return expected_class_recursive_parse
 
 
