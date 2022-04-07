@@ -488,6 +488,7 @@ class DocstringParser(object):
     def parse_attr_list(self, obj, attrib_bodies):
         # TODO redesign this parsing to be sane and not a mess wrt func calls
         args = OrderedDict()
+        recursive_parse = {}
         for attrib_body in attrib_bodies:
             if not isinstance(attrib_body, AttributeBody):
                 continue
@@ -533,6 +534,9 @@ class DocstringParser(object):
                 found_types = MultiType(set(found_types))
             else:
                 found_types = found_types[0]
+                if self.whitelist \
+                    and get_full_qual_name(found_types) in self.whitelist:
+                    recursive_parse[name] = found_types
 
             args[name] = ArgDoc(
                 name=name,
@@ -540,7 +544,7 @@ class DocstringParser(object):
                 type=found_types,
                 default=default,
             )
-        return args
+        return args, recursive_parse
 
     def parse_desc_args_returns(self, obj, recursion_limit=0, parent=None):
         """Parse the docstring of a function.
@@ -594,7 +598,16 @@ class DocstringParser(object):
                 # TODO replace quick HACK, this expects the remainder be attr
                 #   Seems good to separate func and attr parsing if not same
                 #   format.
-                args = self.parse_attr_list(obj, doc.children[field_list:])
+                args, recursive_parse = self.parse_attr_list(
+                    obj,
+                    doc.children[field_list:],
+                )
+                for arg, linked_obj in recursive_parse.items():
+                    # Recursively parse the object
+                    args[arg].type = self.parse(
+                        linked_obj,
+                        recursion_limit=recursion_limit + 1,
+                    )
                 return description, args, ValueExists.false
         else:
             # The field list includes params, types, returns, and rtypes,
@@ -688,7 +701,6 @@ class DocstringParser(object):
 
                     if self.whitelist \
                         and get_full_qual_name(found_types) in self.whitelist:
-                        #found_types = self.parse(found_types)
                         recursive_parse[name] = found_types
 
                 # Update the params and types
@@ -734,20 +746,22 @@ class DocstringParser(object):
                     )
 
         # TODO Recursively parse docs of valid types w/in whitelist, error o.w.
-        for arg in recursive_parse:
-            raise NotImplementedError('Recursive parse of objects w/in types')
+        for arg, linked_obj in recursive_parse.items():
+            #raise NotImplementedError('Recursive parse of objects w/in types')
             # TODO at every _get_object, there is a chance that the object is
             # An object able to be configured.
 
             # Check if in whitelist, error otherwise
-            if qname not in self.whitelist:
-                raise ValueError(
-                    f'Object not in whitelist for recursive parse: {qname}'
-                )
+            #if qname not in self.whitelist:
+            #    raise ValueError(
+            #        f'Object not in whitelist for recursive parse: {qname}'
+            #    )
 
-            # TODO Recursively parse the object
-            self.parse(linked_obj, recursion_limit=recursion_limit + 1)
-
+            # Recursively parse the object
+            params[arg].type = self.parse(
+                linked_obj,
+                recursion_limit=recursion_limit + 1,
+            )
             # TODO Update params and types once parsed.
 
         # En masse args doc linking from an object's __doc__
