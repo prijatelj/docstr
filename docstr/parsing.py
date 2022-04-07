@@ -448,13 +448,16 @@ class DocstringParser(object):
     def _get_object(self, namespace_obj, name, default=ValueExists.false):
         """Wraps get_object with a fallback to this parser's namespace"""
         try:
-            return get_object(namespace_obj, name, default), False
+            return get_object(namespace_obj, name, default)#, False
         except Exception as e:
             # TODO add the above exception to the stack trace of the following
             #.with_traceback(e)
 
+            # TODO ignoring doing this here (if persists, rm this function)
+            # because you can check qual name of object once recieved to see if
+            # it should be parsed based on whitelist or other conditions.
             if self.namespace is not None:
-                return get_namespace_obj(self.namespace, name, default), True
+                return get_namespace_obj(self.namespace, name, default)#, True
 
     def _parse_initial(self, docstring):
         """Internal util for pasring inital portion of docstring."""
@@ -795,12 +798,12 @@ class DocstringParser(object):
                 ordered_params.append(parsed_args)
             for key in growing_arg_set - types.keys():
                 types[key] = ValueExists.true
-
-        # Reconstruct the ordered params from the multiple param ordered dicts
-        new_params = OrderedDict()
-        for op in ordered_params:
-            new_params.update(op)
-        params = new_params
+        # Reconstruct ordered params from the multiple param ordered dicts
+        if ordered_params:
+            new_params = OrderedDict()
+            for op in ordered_params:
+                new_params.update(op)
+            params = new_params
 
         # Specific arg doc linking within an object's __doc__
         if doc_linking:
