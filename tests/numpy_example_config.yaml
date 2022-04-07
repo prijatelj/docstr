@@ -1,7 +1,7 @@
 # A test configuration file for a run using the Numpy example classes.
 
 docstr: # Optional container for all docstr specifc configuraitons.
-  doc_style: numpy
+  style: numpy
   from import:
     tests.numpy_example_docstrings:
       - func_choices
