@@ -55,10 +55,10 @@ class ValueExists(Flag):
 
 # NOTE may use typing.Literal for this? Intended for checking return types, but
 # perhaps this as well in cases where literal instances are expected?
-@dataclass
+@dataclass(frozen=True)
 class MultiType:
     """A set of multiple types for when a variable may take multiple types."""
-    types : set
+    types : frozenset
 
     # TODO handle some internal assessment property that notes if this is a
     # multi type of all literals, if so, then it specifies the choices values
@@ -70,6 +70,9 @@ class MultiType:
         # implemented, but tbh, perhaps this does not to be an object anyways
         # due to stores tuple and would implement a single method that would
         # take object and tuple types?
+
+    def __call__(self, x):
+        return x in self.types
 
 
 # TODO For each of these dataclasses, make them tokenizers for their respective
