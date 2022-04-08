@@ -1,6 +1,11 @@
 from collections.abc import Callable
+import yaml
 
-from configargparse import ArgumentParser
+from configargparse import (
+    ArgumentParser,
+    ConfigparserConfigFileParser,
+    YAMLConfigFileParser,
+)
 
 from docstr.docstring import MultiType
 from docstr.configargparse import NestedNamespace #ArgumentParser
@@ -26,6 +31,13 @@ def make_cli():
     cli = ArgumentParser(
         prog='NumpyDocClassRecursiveParse',
         description='A class with objects to be parsed.',
+        config_file_parser_class=YAMLConfigFileParser,
+    )
+
+    cli.add_argument(
+        '--config',
+        type=yaml.safe_load,
+        is_config_file=True,
     )
 
     # TODO Create a sub/hierarchical ConfigArgParser
@@ -43,38 +55,38 @@ def make_cli():
     # to this sub_cli, in the cli, I could write --cli `--name 'Name' ...` and
     # chain more args that way within the context of going to this sub_cli
     sub_cli.add_argument(
-        #'--name',
+        '--very_useful_class.name',
         help='The name associated with the object instance.',
         dest='very_useful_class.name', # NOTE tmp; to be automated & unneeded
     )
     sub_cli.add_argument(
-        #'-a',
+        '--very_useful_class.a',
         type=MultiType(frozenset({int, float})),
         help='First number in summation.',
         dest='very_useful_class.a', # NOTE tmp; to be automated & unneeded
     )
     sub_cli.add_argument(
-        #'b',
+        '--very_useful_class.b',
         type=MultiType(frozenset({int, float})),
         help='Second number in summation.',
         dest='very_useful_class.b', # NOTE tmp; to be automated & unneeded
     )
     sub_cli.add_argument(
-        '-x',
+        '--very_useful_class.x',
         type=MultiType(frozenset({int, float})),
         default=8,
         help='First number in multiplication.',
         dest='very_useful_class.x', # NOTE tmp; to be automated & unneeded
     )
     sub_cli.add_argument(
-        '-y',
+        '--very_useful_class.y',
         type=MultiType(frozenset({int, float})),
         default=11,
         help='Second number in multiplication. This is an example of alternative specification of default. This support is included in order to be more inclusive of pre-existing standards used by others so that docstr could be applied to these cases. Docstr is intended to allow modifcation to their parsing regexes such that custom support for niche user cases may be handled by the user.',
         dest='very_useful_class.y', # NOTE tmp; to be automated & unneeded
     )
     sub_cli.add_argument(
-        '-z',
+        '--very_useful_class.z',
         type=float,
         default=3.14159,
         help='An example of an attribute with a default value, typically set in init.',
@@ -90,7 +102,7 @@ def make_cli():
 
     # TODO add a function/Callable argument
     cli.add_argument(
-        'func_2',
+        '--func_2',
         type=Callable, # TODO handle get function from str
         default=examples.func_defaults,
         help="A function to be called throughout the class' use."
@@ -101,4 +113,6 @@ def make_cli():
 
 if __name__ == '__main__':
     cli = make_cli()
-    cli.parse_args(namespace=NestedNamespace())
+    args = cli.parse_args(namespace=NestedNamespace())
+
+    print(args)
