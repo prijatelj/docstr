@@ -36,7 +36,7 @@ def make_cli():
 
     cli.add_argument(
         '--config',
-        type=yaml.safe_load,
+        type=yaml.safe_load, # TODO note C Safe loader for yaml.
         is_config_file=True,
     )
 
