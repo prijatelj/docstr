@@ -21,6 +21,88 @@ import configargparse as cap
 # allow for the subparsers to have overlapping arg names because they are
 # inherently nested.
 
+
+class ArgumentParser(cap.ArgumentParser):
+    """An extention to the [config]argparser.ArgumentParser to support nesting
+    ArgumentParsers.
+
+    Attributes
+    ----------
+    see cap.ArgumentParser
+    nested_parsers :
+        Nested parsers are subparsers that ...
+
+    Notes
+    -----
+    This should be tested similarly to ConfigArgParse.ArgumentParser by testing
+    as a drop in replacement to argparse.ArgumentParser, to ensure the added
+    functionality does not hinder any pre-existing expectations or funcitons.
+    """
+    def __init__(self, *args, **kwargs):
+        self._nested_parsers = None
+        super().__init__(*args, **kwargs)
+
+    #def add_nested_group(self, title, object_name, description):
+
+    def add_nested_parsers(self, **kwargs):
+        """ Cannot be too similar to add subparsers due to needing NOT mutual
+        exculsivity.
+
+        This method functions similarly to `add_subparsers()`, except that any
+        required argmuments within the nested parsers are also required by the
+        parent parser. This allows the nested parsers to operate as a subparser
+        does, independently of the parent, as well as extend the parent parser
+        to group required arguments as add_argument_group does. The nested
+        arguments are accessed by the name of the nested_parser from the parent
+        argument parser.
+
+        Returns
+        -------
+        None | ArgumentParser | ArgumentParserGroup
+        """
+        raise NotImplementedError("""
+            The ideal would be that we do not have to always access the setting
+            of an argument using `--nested_1.nested_2.nested_3.nested_3_arg
+            VALUE`. And rather could have a nice indentation (if indented over
+            multiple lines) and have something like:
+            ```
+            python argparserino
+            ```
+        """)
+        if self._nested_parsers is not None:
+            self.error(_('cannot have multiple nested parser arguments'))
+
+        # Add the parser class to the arguments if it's not present
+        kwargs.setdefault('parser_class', type(self))
+
+        # TODO perhaps keep nested parsers under subparsers, but include set of
+        # ids or dict of name to the subparsers that are nested parsers? want
+        # to preserve subparser functionality entirely and only add more to it.
+        if 'title' in kwargs or 'description' in kwargs:
+            title = _(kwargs.pop('title', 'nested command groups'))
+            description = _(kwargs.pop('description', None))
+            self._nested_parsers = self.add_argument_group(title, description)
+        else:
+            self._subparsers = self._positionals
+
+        # TODO prog defaults to the usage message of this parser, skipping
+        # optional arguments and with no "usage:" prefix
+        if kwargs.get('prog') is None:
+            formatter = self._get_formatter()
+            positionals = self._get_positional_actions()
+            groups = self._mutually_exclusive_groups
+            formatter.add_usage(self.usage, positionals, groups, '')
+            kwargs['prog'] = formatter.format_help().strip()
+
+        # TODO create the parsers action and add it to the positionals list
+        parsers_class = self._pop_action_class(kwargs, 'parsers')
+        action = parsers_class(option_strings=[], **kwargs)
+        self._subparsers._add_action(action)
+
+        # Return the created parsers action
+        return action
+
+
 class NestedNamespace(cap.Namespace):
     """An extension to argparse.Namespace allowing for nesting of namespaces.
 
