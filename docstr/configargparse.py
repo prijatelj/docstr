@@ -150,3 +150,77 @@ class NestedNamespace(cap.Namespace):
 
 
 # TODO Perhaps, find/make a nice formatter_class for customized help output?
+
+def get_configargparser(
+    docstring,
+    parser=None,
+    nested_positionals=False,
+    config_file_parser='yaml',
+):
+    """Creates the ConfigArgParser from contents in the given docstr.Docstring.
+
+    Args
+    ----
+    docstring : ClassDocstring | FuncDocstring
+    parser : ArgParser | argparse._ArgumentGroup = None
+        A pre-existing parser object to be extended with a parser for this
+        ClassDocstring's configurable initialization arguments.
+    neted_positionals : bool = False
+        If True, then the nested parser created here and below through
+        recursive calling will allow positional arguments for required
+        arguments instead of keyword required arguments. The default is
+        False, meaning any required argument is made as a required keyword
+        argument, non-positional.
+    """
+    if isinstance(docstring, ClassDocstring):
+        description = \
+            f'{docstring.description}\n \n'{docsring.init.description}'
+        # TODO store the object in type to recreate the object post CAP parse
+        args = docstring.init.args
+    elif isinstance(docstring, FuncDocstring):
+        description = docstring.description
+        # TODO store the object in type to recreate the object post CAP parse
+        args = docstring.args
+    elif isinstance(docstring, Docstring):
+        raise TypeError(' '.join([
+            '`docstring` is an unsupported subclass of `docstr.Docstring`.',
+            f'Expected ClassDocstring or FuncDocstring, not: {type(docstring}'
+        ]))
+    else:
+        raise TypeError(f'Unexpected `docstring` type: {type(docstring)}')
+
+    # Setup the nested parser / argument_group
+    if parser is None:
+        if config_file == 'yaml':
+            config_file_parser = cap.YAMLConfigFileParser
+        elif config_file == 'ini':
+            config_file_parser = cap.ConfigparserConfigFileParser
+        else:
+            raise ValueError(f'Unexpected `config_file` value: {config_file}')
+        parser = cap.ArgParser(
+            prog=docstring.name,
+            description=description,
+            config_file_parser_class=config_file_parser,
+        )
+    elif isinstance(parser, {ArgParser, argparse._ArgumentGroup}):
+        # Create the subparsers and pass that down any recursive get_cap()
+        # TODO Once a Nested Parser is supported, replace this w/ that
+        # This should never occur if docstr cli is used, as that makes
+        # the base parser, which already added subparsers
+
+        # TODO handle name prefix for nesting!
+        nested_parser = parser.add_argument_group(
+            f'{self.name}',
+            description,
+        )
+    else:
+        raise TypeError(f'Unexpected `parser` type: {type(parser)}')
+
+    # TODO set args from __init__ for ClassDocstrings
+    #init_parser = self.init_docstring.get_cap(parser)
+
+    # TODO set args from __init__ for ClassDocstrings
+
+    # TODO For any subclasses of Docstring, recursive call get_cap()
+
+    return parser

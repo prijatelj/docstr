@@ -230,26 +230,6 @@ class FuncDocstring(Docstring):
         """
         raise NotImplementedError()
 
-    def get_cap(self, parser=None):
-        if parser is None:
-            parser = cap.ArgParser(
-                prog=self.name,
-                description=self.short_description,
-            )
-        else:
-            parser = parser.add_argument_group(
-                self.name,
-                self.short_description,
-            )
-
-        for arg in self.args:
-            arg.add_to_parser
-            parser.add_agument(
-                f'--'
-            )
-
-        return parser
-
 
 @dataclass
 class ClassDocstring(Docstring):
@@ -280,28 +260,6 @@ class ClassDocstring(Docstring):
             ]))
         self.init = init
 
-    def get_cap(self, parser=None):
-        """Creates the argparser from the contents of the ClassDocstring."""
-        # TODO set args from __init__
-        if parser is None:
-            parser = cap.ArgParser(
-                prog=self.name,
-                description=self.short_description,
-            )
-        else:
-            parser = parser.add_argument_group(
-                self.name,
-                self.short_description,
-            )
-
-        #init_parser = self.init_docstring.get_cap(parser)
-
-
-        # TODO set name, description
-
-        # TODO set args from __init__
-
-        return parser
 
 # TODO consider making a namespace object that is the root of Docstr's parsed
 # tokens and allows for easy querying of namespace paths within it.
