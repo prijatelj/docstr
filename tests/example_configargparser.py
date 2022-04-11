@@ -38,6 +38,7 @@ def make_cli():
         '--config',
         type=yaml.safe_load, # TODO note C Safe loader for yaml.
         is_config_file=True,
+        help="Configuration file path",
     )
 
     # TODO Create a sub/hierarchical ConfigArgParser
@@ -104,6 +105,8 @@ def make_cli():
     cli.add_argument(
         '--func_2',
         type=Callable, # TODO handle get function from str
+        # Enable getting from the docstr namespace w/ fallback to global import.
+        #type=partial(docstr.parsing.get_namespace_obj(docstr_namespace))
         default=examples.func_defaults,
         help="A function to be called throughout the class' use."
     )
