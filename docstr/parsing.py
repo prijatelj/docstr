@@ -85,18 +85,32 @@ def get_builtin(name, default=ValueExists.false):
     return get_namespace_obj(builtins, name, default)
 
 
-def get_object_intsance(
-    namespace_obj,
-    name,
-    default=ValueExists.false,
-    astype=None,
-):
-    """Create an object instance or literal from a string representation."""
-    if astype is not None:
-        raise NotImplementedError('Informed through `astype` not yet coded.')
-    # ast.literal_eval() supports: strings, bytes, numbers, tuples, lists,
-    # dicts, sets, booleans, None and Ellipsis.
-    return ast.literal_eval(name)
+def get_module_object(name, default=ValueExists.false):
+    """Gets the object accessible from a global access of `from module import`,
+    where the given name of the object is the module joined by periods to the
+    actual object, such as f'{__module__}.{__qualname__}'.
+
+    NOTE
+    ----
+    This can probably be improved, especially the first `except` section.
+    """
+    try:
+        return import_module(name)
+    except ModuleNotFoundError as e:
+        parts = name.split('.')
+        for i in range(1, len(parts)):
+            try:
+                module = import_module('.'.join(parts[:-i]))
+                break
+            except ModuleNotFoundError as e:
+                continue
+        else: # Raise 1st e if no module found at all from name
+            if default is not ValueExists.false:
+                return default
+            raise e
+        return attrgetter('.'.join(parts[-i:]))(module)
+        # TODO beware that this may return None by default rather than
+        # raise an exception!
 
 
 def get_object(namespace_obj, name, default=ValueExists.false):
@@ -129,6 +143,9 @@ def get_object(namespace_obj, name, default=ValueExists.false):
     except AttributeError as e_namespace_module:
         try:
             return ast.literal_eval(name)
+        #raise NotImplementedError('Informed through `astype` not yet coded.')
+        # ast.literal_eval() supports: strings, bytes, numbers, tuples, lists,
+        # dicts, sets, booleans, None and Ellipsis.
         except Exception as e_literal_eval:
             #raise NotImplementedError(' '.join([
             #   'Need to support conversion of a str of an object instance or',
@@ -145,21 +162,7 @@ def get_object(namespace_obj, name, default=ValueExists.false):
             #       This works if the module is right before the object If the
             #       object is a function within a class, this requires a [:-2]
             #       of last '.' check.
-            try:
-                return import_module(name)
-            except ModuleNotFoundError as e:
-                parts = name.split('.')
-                for i in range(1, len(parts)):
-                    try:
-                        module = import_module('.'.join(parts[:-i]))
-                        break
-                    except ModuleNotFoundError as e:
-                        continue
-                else: # Raise 1st e if no module found at all from name
-                    raise e
-                return attrgetter('.'.join(parts[-i:]))(module)
-                # TODO beware that this may return None by default rather than
-                # raise an exception!
+            return get_module_object(name)
 
 
 class AttributeName(nodes.TextElement):
