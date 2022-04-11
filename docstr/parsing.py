@@ -1123,6 +1123,46 @@ class DocstringParser(object):
         # TODO parse_config
 
 
+def parse_config(docstr_args, prog_args, *args, **kwargs):
+    """Handles the config parsing before passing to docstr.parse()"""
+    # TODO load docstr config and tree to be parsed.
+    """
+    if isinstance(obj, str) and os.path.splitext(obj)[-1] in {'.yaml', '.ini'}:
+        with open(obj, 'r') as openf:
+            config = yaml.safe_load(openf)
+    elif isinstance(obj, filestream):
+        config = yaml.safe_load(obj)
+    elif not isinstance(obj, dict):
+        raise TypeError(' '.join([
+            'Expected, config file path, file stream, or dictionary, but',
+            f'recieved: {type(obj)}',
+        ]))
+
+    if 'docstr' in config:
+        # Obtain the docstr config values, possibly use ConfigArgParse for this
+        # Override
+        pass
+        raise NotImplementedError(' '.join([
+            'ConfigArgParse ignores the rest, so make specific parser for',
+            'docstr parse/run.',
+        ]))
+    """
+
+    # TODO Handle all Docstr configuration via cap
+    # TODO generate whitelist from the docstr namespace.
+
+    # TODO If given the config files are not accompanied by pre-parsed tokens,
+    #   parse the objects within the config starting with the main function and
+    #   generate the ConfigArgParser for the specific python program.
+    tokens = parse(main, style=args.style, whitelist=whitelist)
+
+
+    # TODO After the CAP for this program is made, use to run the program given
+    # config and other arguments not used by the docstr CAP.
+    prog_cap = tokens.get_cap()
+    main(**prog_cap.parse_args(args.prog_args))
+
+
 def parse(obj, *args, **kwargs):
     """Parses the object with the expected doc_style.
     Args
