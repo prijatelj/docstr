@@ -107,10 +107,10 @@ def make_cli():
         type=Callable, # TODO handle get function from str
         # Enable getting from the docstr namespace w/ fallback to global import.
         #type=partial(docstr.parsing.get_namespace_obj(docstr_namespace))
+        #type=partial(docstr.parsing.get_module_object) # For full qual names
         default=examples.func_defaults,
         help="A function to be called throughout the class' use."
     )
-
     return cli
 
 
