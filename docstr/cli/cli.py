@@ -12,6 +12,9 @@ def run_cap(subparsers):
         'run',
         help='Run a python program given the config file.',
     )
+
+    # TODO I dislike the required -c and --docstr.config instead of positional,
+    #   but this seems necessary with ConfigArgParse as it is seems to work.
     subcap.add_argument(
         '-c',
         '--docstr.config',
@@ -155,6 +158,7 @@ def docstr_cap():
     # TODO pass the docstr cap to the parse_config() or parse()
     #   We want docstr cap to handle config path, given file stream, & dict.
     parse_config(*root_cap.parse_known_args(namespace=NestedNamespace()))
+
 
 if __name__ == '__main__':
     docstr_cap()
