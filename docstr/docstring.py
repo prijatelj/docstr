@@ -64,6 +64,16 @@ class MultiType:
     # multi type of all literals, if so, then it specifies the choices values
     # of that this variable may take.
 
+    # TODO perhaps should preserve order of types? Otherwise need way to tell
+    # which arbitrary type to cast to given some pattern hint in the input
+    # string, or given some setting in another variable, either order of
+    # priority, or pattern condition. Insertion ordered frozen/immutable set.
+
+    # TODO isinstance(instance, multi_type_instance) ; or otherwise an
+    # equivalent method, especialy since MultiType.isinstance() would keep it
+    # clear this is about being in one of the multiple types, but
+    # isinstance(instance, {'set', 'of', 'types'}) is desirable.
+
     def check(self, objs):
         raise NotImplementedError('Consider pydantic? or extend argparse')
         # TODO for this to be worth an object, type checking/handling needs
@@ -72,7 +82,16 @@ class MultiType:
         # take object and tuple types?
 
     def __call__(self, x):
-        return x in self.types
+        for cast_type in self.types:
+            try:
+                return cast_type(x)
+            except ValueError as err:
+                pass
+        raise ValueError(' '.join([
+            f'The given object `{x}` is not cast-able to any of the types:'
+            f'{self.types}'
+        ]))
+
 
 
 # TODO For each of these dataclasses, make them tokenizers for their respective
