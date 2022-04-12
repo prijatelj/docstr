@@ -1,6 +1,14 @@
 """ConfigArgParse specific extentions or utils for docstr."""
 import configargparse as cap
 
+from docstr.docstring import (
+    ValueExists,
+    MultiType,
+    Docstring,
+    ClassDocstring,
+    FuncDocstring,
+)
+
 
 # TODO Nested ConfigArgParse Namespace and a parser module to be nested.
 #   extend argparse's argument groups to be their own CAP parser module.
@@ -151,8 +159,10 @@ class NestedNamespace(cap.Namespace):
 
 # TODO Perhaps, find/make a nice formatter_class for customized help output?
 
+
 def get_configargparser(
     docstring,
+    nested_prefix='',
     parser=None,
     nested_positionals=False,
     config_file_parser='yaml',
@@ -162,6 +172,8 @@ def get_configargparser(
     Args
     ----
     docstring : ClassDocstring | FuncDocstring
+        The root of some tree of docstr parsed tokens to be walked through
+        to generate the ConfigArgParser for those parsed tokens.
     parser : ArgParser | argparse._ArgumentGroup = None
         A pre-existing parser object to be extended with a parser for this
         ClassDocstring's configurable initialization arguments.
@@ -174,7 +186,7 @@ def get_configargparser(
     """
     if isinstance(docstring, ClassDocstring):
         description = \
-            f'{docstring.description}\n \n'{docsring.init.description}'
+            f'{docstring.description}\n \n{docstring.init.description}'
         # TODO store the object in type to recreate the object post CAP parse
         args = docstring.init.args
     elif isinstance(docstring, FuncDocstring):
@@ -184,25 +196,27 @@ def get_configargparser(
     elif isinstance(docstring, Docstring):
         raise TypeError(' '.join([
             '`docstring` is an unsupported subclass of `docstr.Docstring`.',
-            f'Expected ClassDocstring or FuncDocstring, not: {type(docstring}'
+            f'Expected ClassDocstring or FuncDocstring, not: {type(docstring)}'
         ]))
     else:
         raise TypeError(f'Unexpected `docstring` type: {type(docstring)}')
 
     # Setup the nested parser / argument_group
     if parser is None:
-        if config_file == 'yaml':
+        if config_file_parser == 'yaml':
             config_file_parser = cap.YAMLConfigFileParser
-        elif config_file == 'ini':
+        elif config_file_parser == 'ini':
             config_file_parser = cap.ConfigparserConfigFileParser
         else:
-            raise ValueError(f'Unexpected `config_file` value: {config_file}')
-        parser = cap.ArgParser(
+            raise ValueError(
+                f'Unexpected `config_file` value: {config_file_parser}'
+            )
+        nested_parser = cap.ArgParser(
             prog=docstring.name,
             description=description,
             config_file_parser_class=config_file_parser,
         )
-    elif isinstance(parser, {ArgParser, argparse._ArgumentGroup}):
+    elif isinstance(parser, {cap.ArgParser, cap._ArgumentGroup}):
         # Create the subparsers and pass that down any recursive get_cap()
         # TODO Once a Nested Parser is supported, replace this w/ that
         # This should never occur if docstr cli is used, as that makes
@@ -210,17 +224,72 @@ def get_configargparser(
 
         # TODO handle name prefix for nesting!
         nested_parser = parser.add_argument_group(
-            f'{self.name}',
+            f'{nested_prefix}.{docstring.name}', # TODO WIP! finish this prefix!
             description,
         )
     else:
         raise TypeError(f'Unexpected `parser` type: {type(parser)}')
 
-    # TODO set args from __init__ for ClassDocstrings
-    #init_parser = self.init_docstring.get_cap(parser)
+    # TODO If any Class/FuncDocstring classes in type: recursive call get_cap()
+    recursive_args = {}
+    for arg_key, arg in args.items():
+        if nested_prefix:
+            name = f'{nested_prefix}.{arg.name}'
+        else:
+            name = arg.name
 
-    # TODO set args from __init__ for ClassDocstrings
+        # For `required` and any other args handled similarly by argparse
+        arg_kwargs = {}
 
-    # TODO For any subclasses of Docstring, recursive call get_cap()
+        if not nested_positionals:
+            name = f'--{name}'
+            if arg.default is ValueExists.false:
+                arg_kwargs['required'] = True
+
+        # TODO handle alias of single letter, perhaps splat expand list?
+        #   Seems a list may be given w/o error, so just make name a list.
+
+        default = None if arg.default is ValueExists.false else arg.default
+        desc= None if arg.description is ValueExists.false else arg.description
+
+        # TODO handle arg type
+        if isinstance(arg.type, {ClassDocstring, FuncDocstring}):
+            recursive_args[arg_key] = {
+                'name': name,
+                'type': arg.type,
+                'help': desc,
+                'default': default,
+            }
+            recursive_args[arg_key].update(arg_kwargs)
+            continue
+        elif isinstance(arg.type, MultiType):
+            raise NotImplementedError('Support choices.')
+            # TODO ensure MultiType treated as set/container
+            arg_kwargs['choices'] = arg.type
+
+        nested_parser.add_argument(
+            name,
+            type=arg.type,
+            help=desc,
+            default=default,
+            **arg_kwargs,
+        )
+
+    # TODO this begs for trivial parallelization, possibly async creation
+    for rec_args, rec_arg_parts in recursive_args.items():
+        arg = args[rec_args]
+        get_configargparser(
+            arg['type'],
+            arg['name'],
+            nested_parser,
+            nested_positionals,
+        )
 
     return parser
+
+# TODO Either here or docstr/cli make ConfigArgParser for hardware & logging
+#   the hardware and logging can inform what parallelization docstr may use, or
+#   could be used to inform how to run the python program, possibly. The latter
+#   involves solving the issue of communication from docstr to an arbitrary
+#   python program. Could just be optoinally used by the python program, so if
+#   it can use the configs, then it can if desired.
