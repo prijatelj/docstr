@@ -11,12 +11,15 @@ from docstr.configargparse import NestedNamespace
 import tests.numpy_example_docstrings as examples
 
 def test_prototype_yaml_dict_nested_conversion():
-    prog_name, namespace = cli.prototype_hack_reformat_yaml_dict_unnested_cap(
+    namespace = cli.prototype_hack_reformat_yaml_dict_unnested_cap(
         'tests/numpy_example_config.yaml'
     )
 
     # Check the entry object name is correct. This is the python program name.
-    assert prog_name == 'NumpyDocClassRecursiveParse'
+    assert namespace.docstr.entry_obj == examples.NumpyDocClassRecursiveParse
+
+    # prog_name is based on the top level key of the yaml config.
+    assert namespace.docstr.prog_name == 'NumpyDocClassRecursiveParse'
 
     # Check the resulting docstr config
     assert isinstance(namespace, NestedNamespace)
@@ -38,7 +41,7 @@ def test_prototype_yaml_dict_nested_conversion():
         expected_config = yaml.safe_load(openf)
 
     # Should be the converted pseudo-nested dict format
-    reformatted = getattr(namespace, prog_name).args
+    reformatted = getattr(namespace, namespace.docstr.prog_name).args
     print('reformatted:\n', reformatted)
     print('expected config:\n', expected_config)
     assert reformatted == expected_config

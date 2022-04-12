@@ -1,5 +1,4 @@
 """The base docstr command line interface through ConfigArgParse."""
-from sys import argv as sys_argv
 import os
 from importlib import import_module
 from operator import attrgetter
@@ -195,10 +194,18 @@ def prototype_hack_reformat_yaml_dict_unnested_cap(config_path):
     # Depth first loop that walks the remaining "tree" config.
     first_item = config.popitem()
     item_stack = [first_item[1]]
+
+    # Need to keep track of accepted parents as prefix.
     if first_item[0] in namespace:
-        stack_prefix = '' # Need to keep track of accepted parents as prefix.
+        stack_prefix = ''
+        entry_obj = first_item[0]
     else:
         stack_prefix = first_item[0]
+        if len(first_item[1]) == 1:
+            entry_obj = list(first_item[1].keys())[0]
+        else:
+            raise NotImplementedError('Naming the prog with more than one key')
+    cap_namespace.docstr.prog_name = first_item[0]
     setattr(cap_namespace, first_item[0], NestedNamespace())
 
     while item_stack:
@@ -221,25 +228,24 @@ def prototype_hack_reformat_yaml_dict_unnested_cap(config_path):
             stack_prefix = stack_prefix.rpartition('.')[0]
 
     cap_namespace.docstr.namespace = namespace
+    cap_namespace.docstr.entry_obj = namespace[entry_obj]
     cap_namespace.docstr.whitelist = {
         get_full_qual_name(n) for n in namespace.values()
     }
     getattr(cap_namespace, first_item[0]).args = config_reformatted
 
-    return first_item[0], cap_namespace
+    return cap_namespace
 
 
-def docstr_cap():
+def docstr_cap(config):
     """The docstr main ConfigArgParser."""
     # NOTE Does note need to be a sys_argv, can be a str positional in CAP.
-    ext = os.path.splitext(sys_argv[1])[-1]
+    ext = os.path.splitext(config)[-1]
     if ext != 'yaml':
         raise NotImplementedError('Currently only yaml configs are supported.')
 
     # Parse the yaml config into the format for docstr prototype w/ CAP
-    prog, cap_namespace = prototype_hack_reformat_yaml_dict_unnested_cap(
-        sys_argv[1],
-    )
+    cap_namespace = prototype_hack_reformat_yaml_dict_unnested_cap(config)
 
     root_cap = cap.ArgumentParser(
         prog='docstr',
@@ -265,10 +271,10 @@ def docstr_cap():
     #parse_config(*root_cap.parse_known_args(namespace=NestedNamespace()))
     parse_config(
         cap_namespace.docstr,
-        cap_namespace.docstr.namespace[prog],
-        getattr(cap_namespace, prog),
+        getattr(cap_namespace, cap_namespace.docstr.prog_name),
     )
 
 
 if __name__ == '__main__':
-    docstr_cap()
+    from sys import argv as sys_argv
+    docstr_cap(sys_argv[1])

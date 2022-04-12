@@ -1123,7 +1123,7 @@ class DocstringParser(object):
         # TODO parse_config
 
 
-def parse_config(docstr_args, entry_obj, prog_args):
+def parse_config(docstr_args, prog_args):
     """Handles the config parsing before passing to docstr.parse()"""
     # TODO load docstr config and tree to be parsed.
     """
@@ -1155,7 +1155,7 @@ def parse_config(docstr_args, entry_obj, prog_args):
     #   parse the objects within the config starting with the main function and
     #   generate the ConfigArgParser for the specific python program.
     tokens = parse(
-        entry_obj,
+        docstr_args.entry_obj,
         style=docstr_args.style,
         whitelist=docstr.whitelist,
     )
