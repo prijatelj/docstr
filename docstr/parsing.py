@@ -1163,7 +1163,7 @@ def parse_config(docstr_args, entry_obj, prog_args):
     # TODO After the CAP for this program is made, use to run the program given
     # config and other arguments not used by the docstr CAP.
     prog_cap = get_configargparser(tokens)
-    getattr(**prog_cap.parse_args(args.prog_args), docstr_args.main)()
+    #getattr(**prog_cap.parse_args(args.prog_args), docstr_args.main)()
 
 
 def parse(obj, *args, **kwargs):
