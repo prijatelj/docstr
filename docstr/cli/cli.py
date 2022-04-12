@@ -7,7 +7,7 @@ import yaml
 import configargparse as cap
 
 from docstr import parse_config #, parse
-from docstr.configargparse import NestedNamespace
+from docstr.configargparse import NestedNamespace, get_configargparser
 from docstr.docstring import get_full_qual_name
 
 # TODO Run ConfigArgParse subparser
@@ -247,15 +247,15 @@ def docstr_cap(config):
     # Parse the yaml config into the format for docstr prototype w/ CAP
     cap_namespace = prototype_hack_reformat_yaml_dict_unnested_cap(config)
 
-    root_cap = cap.ArgumentParser(
-        prog='docstr',
-        description='Python docstring parsing for write once design.',
-        config_file_parser_class=cap.YAMLConfigFileParser,
-        default_config_files=['~/.docstr/docstr_defaults'],
-    )
-    # TODO want to be able to support any config file format CAP supports.
+    #root_cap = cap.ArgumentParser(
+    #    prog='docstr',
+    #    description='Python docstring parsing for write once design.',
+    #    config_file_parser_class=cap.YAMLConfigFileParser,
+    #    # TODO want to be able to support any config file format CAP supports.
+    #    default_config_files=['~/.docstr/docstr_defaults'],
+    #)
 
-    # TODO Implement docstr CAP (arg group)
+    # TODO Implement docstr CAP (arg group), after prototype
 
     # TODO Pass the rest of the args via sys_arv to the docstr CAP.
 
@@ -269,11 +269,22 @@ def docstr_cap(config):
     # TODO pass the docstr cap to the parse_config() or parse()
     #   We want docstr cap to handle config path, given file stream, & dict.
     #parse_config(*root_cap.parse_known_args(namespace=NestedNamespace()))
-    parse_config(
+    tokens = parse_config(
         cap_namespace.docstr,
         getattr(cap_namespace, cap_namespace.docstr.prog_name),
     )
 
+    # TODO parsing of docstrings finished, get the CAP form those tokens
+    prog_cap = get_configargparser(tokens)
+
+    # TODO run the program with the parsed tokens and aligned CAP values
+    #getattr(**prog_cap.parse_args(args.prog_args), docstr_args.main)()
+
+    #args= prog_cap.parse_args(
+    #    getattr(cap_namespace, cap_namespace.docstr.prog_name)
+    #)
+
+    #docstr.run(tokens, args)
 
 if __name__ == '__main__':
     from sys import argv as sys_argv

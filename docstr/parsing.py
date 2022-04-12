@@ -1154,7 +1154,7 @@ def parse_config(docstr_args, prog_args):
     # TODO If given the config files are not accompanied by pre-parsed tokens,
     #   parse the objects within the config starting with the main function and
     #   generate the ConfigArgParser for the specific python program.
-    tokens = parse(
+    return = parse(
         docstr_args.entry_obj,
         style=docstr_args.style,
         whitelist=docstr.whitelist,
@@ -1162,7 +1162,7 @@ def parse_config(docstr_args, prog_args):
 
     # TODO After the CAP for this program is made, use to run the program given
     # config and other arguments not used by the docstr CAP.
-    prog_cap = get_configargparser(tokens)
+    #prog_cap = get_configargparser(tokens)
     #getattr(**prog_cap.parse_args(args.prog_args), docstr_args.main)()
 
 
