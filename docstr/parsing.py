@@ -1123,7 +1123,7 @@ class DocstringParser(object):
         # TODO parse_config
 
 
-def parse_config(docstr_args, prog_args, *args, **kwargs):
+def parse_config(docstr_args, entry_obj, prog_args):
     """Handles the config parsing before passing to docstr.parse()"""
     # TODO load docstr config and tree to be parsed.
     """
@@ -1154,13 +1154,16 @@ def parse_config(docstr_args, prog_args, *args, **kwargs):
     # TODO If given the config files are not accompanied by pre-parsed tokens,
     #   parse the objects within the config starting with the main function and
     #   generate the ConfigArgParser for the specific python program.
-    tokens = parse(main, style=args.style, whitelist=whitelist)
-
+    tokens = parse(
+        entry_obj,
+        style=docstr_args.style,
+        whitelist=docstr.whitelist,
+    )
 
     # TODO After the CAP for this program is made, use to run the program given
     # config and other arguments not used by the docstr CAP.
-    prog_cap = tokens.get_cap()
-    main(**prog_cap.parse_args(args.prog_args))
+    prog_cap = get_configargparser(tokens)
+    getattr(**prog_cap.parse_args(args.prog_args), docstr_args.main)()
 
 
 def parse(obj, *args, **kwargs):
