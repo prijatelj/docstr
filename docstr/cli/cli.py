@@ -1,8 +1,14 @@
 """The base docstr command line interface through ConfigArgParse."""
+from sys import argv as sys_argv
+import os
+from importlib import import_module
+from operator import attrgetter
+
 import configargparse as cap
 
 from docstr import parse_config #, parse
 from docstr.configargparse import NestedNamespace
+from docstr.docstring import get_full_qual_name
 
 # TODO Run ConfigArgParse subparser
 def run_cap(subparsers):
@@ -135,13 +141,103 @@ def parse_cap(subparsers):
     """Parse a given list of objects, passing or saving the parsed tokens."""
     raise NotImplementedError()
 
+
 # TODO Compile ConfigArgParse subparser
 def compile_cap(subparsers):
     """Compile actions of docstr given parsed tokens."""
     raise NotImplementedError()
 
+
+def prototype_hack_reformat_yaml_dict_unnested_cap(config_path):
+    with open(config_path, 'r') as openf:
+        config = yaml.safe_load(openf)
+
+    # TODO parse docstr config & namespace things from docstr part of yaml
+    docstr_parsed = {}
+    docstr_config = config.pop('docstr').items(): # Crashes if no docstr key
+    reformatted_key = f'docstr.{key.replace(' ', '_')}'
+
+    cap_namespace = NestedNamespace()
+    cap_namespace.docstr = NestedNamespace()
+    cap_namespace.docstr.style = docstr_config.pop('style', 'numpy')
+    cap_namespace.docstr.main = docstr_config.pop('main', None)
+
+    if len(docstr_config) > 1:
+        raise ValueError(
+            f'Unexpected more keys, other than from imoprt:\n{docstr_config}'
+        )
+
+    key, from_import = docstr_config.popitem()
+
+    if key not in {'from import', 'from_import'}:
+        raise ValueError(f'Unexpected key in docstr config: {key}')
+    del key
+
+    # Handle namespace things given `from_import`
+    namespace = {}
+    for module, objs in from_import.items():
+        imported_module = import_module(module)
+        if isinstance(objs, str):
+            namespace[objs] = attrgetter(objs)(imported_module)
+        elif isinstance(objs, list):
+            for obj in objs: # NOTE does not support `from import as`
+                namespace[obj] = attrgetter(obj)(imported_module)
+        else:
+            raise TypeError(
+                f'Unexpected module mapped value type: {type(objs)}'
+            )
+
+    # Given the namespace in the config (or not), reformat the config dict into
+    # expected nested format.
+
+    config_reformatted = {}
+
+    # Depth first loop that walks the remaining "tree" config.
+    first_item = config.popitem()
+    item_stack = [first_item[1]]
+    if first_item[0] not in namespace
+        stack_prefix = '' # Need to keep track of accepted parents as prefix.
+    else:
+        stack_prefix = first_item[0]
+    setattr(cap_namespace, first_item[0], NestedNamespace())
+
+    while item_stack:
+        if isinstance(item_stack[-1], dict):
+            if item_stack[-1]:
+                # is non-leaf w/ children
+                next_item = item_stack[-1].popitem()
+                if next_item[0] not in namespace:
+                    stack_prefix += f'.{next_item[0]}'
+                item_stack.append(next_item[1])
+            else:
+                # the non-leaf is empty, time to pop
+                item_stack.pop()
+                stack_prefix = stack_prefix.rpartition('.')[0]
+        else: # item is a leaf
+            config_reformatted[stack_prefix] = item_stack.pop()
+            stack_prefix = stack_prefix.rpartition('.')[0]
+
+    cap_namespace.docstr.namespace = namespace
+    cap_namespace.docstr.whitelist = {
+        get_full_qual_name(n) for n in namespace.values()
+    }
+    getattr(cap_namespace, first_item[0]).args = config_reformatted
+
+    return first_item[0], cap_namespace
+
+
 def docstr_cap():
     """The docstr main ConfigArgParser."""
+    # NOTE Does note need to be a sys_argv, can be a str positional in CAP.
+    ext = os.path.splitext(sys_argv[1])[-1]:
+    if ext != 'yaml':
+        raise NotImplementedError('Currently only yaml configs are supported.')
+
+    # Parse the yaml config into the format for docstr prototype w/ CAP
+    prog, cap_namespace = prototype_hack_reformat_yaml_dict_unnested_cap(
+        sys_argv[1],
+    )
+
     root_cap = cap.ArgumentParser(
         prog='docstr',
         description='Python docstring parsing for write once design.',
@@ -150,14 +246,25 @@ def docstr_cap():
     )
     # TODO want to be able to support any config file format CAP supports.
 
-    subcaps = root_cap.add_subparsers(help='sub-command help',)
-    run_cap(subcaps)
+    # TODO Implement docstr CAP (arg group)
+
+    # TODO Pass the rest of the args via sys_arv to the docstr CAP.
+
+
+    # TODO implement any necessary subcommands, after prototype hack
+    #subcaps = root_cap.add_subparsers(help='subcommand help',)
+    #run_cap(subcaps)
     #parse_cap(subcaps)
     #compile_cap(subcaps)
 
     # TODO pass the docstr cap to the parse_config() or parse()
     #   We want docstr cap to handle config path, given file stream, & dict.
-    parse_config(*root_cap.parse_known_args(namespace=NestedNamespace()))
+    #parse_config(*root_cap.parse_known_args(namespace=NestedNamespace()))
+    parse_config(
+        cap_namepsace.docstr,
+        cap_namespace.docstr.namespace[prog],
+        getattr(cap_namespace, prog),
+    )
 
 
 if __name__ == '__main__':
