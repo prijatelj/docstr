@@ -3,6 +3,7 @@ from sys import argv as sys_argv
 import os
 from importlib import import_module
 from operator import attrgetter
+import yaml
 
 import configargparse as cap
 
@@ -154,8 +155,8 @@ def prototype_hack_reformat_yaml_dict_unnested_cap(config_path):
 
     # TODO parse docstr config & namespace things from docstr part of yaml
     docstr_parsed = {}
-    docstr_config = config.pop('docstr').items(): # Crashes if no docstr key
-    reformatted_key = f'docstr.{key.replace(' ', '_')}'
+    docstr_config = config.pop('docstr') # Crashes if no docstr key
+    #reformatted_key = f"docstr.{key.replace(' ', '_')}"
 
     cap_namespace = NestedNamespace()
     cap_namespace.docstr = NestedNamespace()
@@ -189,13 +190,12 @@ def prototype_hack_reformat_yaml_dict_unnested_cap(config_path):
 
     # Given the namespace in the config (or not), reformat the config dict into
     # expected nested format.
-
     config_reformatted = {}
 
     # Depth first loop that walks the remaining "tree" config.
     first_item = config.popitem()
     item_stack = [first_item[1]]
-    if first_item[0] not in namespace
+    if first_item[0] in namespace:
         stack_prefix = '' # Need to keep track of accepted parents as prefix.
     else:
         stack_prefix = first_item[0]
@@ -207,7 +207,10 @@ def prototype_hack_reformat_yaml_dict_unnested_cap(config_path):
                 # is non-leaf w/ children
                 next_item = item_stack[-1].popitem()
                 if next_item[0] not in namespace:
-                    stack_prefix += f'.{next_item[0]}'
+                    if stack_prefix:
+                        stack_prefix += f'.{next_item[0]}'
+                    else:
+                        stack_prefix = next_item[0]
                 item_stack.append(next_item[1])
             else:
                 # the non-leaf is empty, time to pop
@@ -229,7 +232,7 @@ def prototype_hack_reformat_yaml_dict_unnested_cap(config_path):
 def docstr_cap():
     """The docstr main ConfigArgParser."""
     # NOTE Does note need to be a sys_argv, can be a str positional in CAP.
-    ext = os.path.splitext(sys_argv[1])[-1]:
+    ext = os.path.splitext(sys_argv[1])[-1]
     if ext != 'yaml':
         raise NotImplementedError('Currently only yaml configs are supported.')
 
@@ -261,7 +264,7 @@ def docstr_cap():
     #   We want docstr cap to handle config path, given file stream, & dict.
     #parse_config(*root_cap.parse_known_args(namespace=NestedNamespace()))
     parse_config(
-        cap_namepsace.docstr,
+        cap_namespace.docstr,
         cap_namespace.docstr.namespace[prog],
         getattr(cap_namespace, prog),
     )
