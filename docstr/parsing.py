@@ -1154,7 +1154,7 @@ def parse_config(docstr_args, prog_args):
     # TODO If given the config files are not accompanied by pre-parsed tokens,
     #   parse the objects within the config starting with the main function and
     #   generate the ConfigArgParser for the specific python program.
-    return = parse(
+    return parse(
         docstr_args.entry_obj,
         style=docstr_args.style,
         whitelist=docstr.whitelist,
