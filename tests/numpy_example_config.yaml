@@ -7,6 +7,8 @@ docstr: # Optional container for all docstr specifc configuraitons.
       - func_choices
       - NumpyDocClass
       - NumpyDocClassRecursiveParse
+  # main will either be a function that _is_ the entry_obj, or a method to call
+  # on the entry_obj.
   main: run # NumpyDocClassRecursiveParse.run
 
 NumpyDocClassRecursiveParse:
