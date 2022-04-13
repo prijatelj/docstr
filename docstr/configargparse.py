@@ -8,6 +8,8 @@ from docstr.docstring import (
     ClassDocstring,
     FuncDocstring,
 )
+# TODO should handle Callable, etcs in parsing the tokens?
+#from docstr.parsing import get_namespace_obj, get_module_object
 
 
 # TODO Nested ConfigArgParse Namespace and a parser module to be nested.
