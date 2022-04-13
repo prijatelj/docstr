@@ -221,7 +221,7 @@ class FuncDocstring(Docstring):
     def __post_init__(self, type):
         if not isinstance(type, FunctionType):
             raise TypeError(
-                f'FuncDocstring given a type thats not FunctionType: {type}'
+                f"FuncDocstring given a type that's not FunctionType: {type}"
             )
         self.type = type
 
@@ -261,7 +261,7 @@ class ClassDocstring(Docstring):
 
         if not isinstance(type, ClassType):
             raise TypeError(
-                f'ClassDocstring given a type thats not `type`: {type}'
+                f"ClassDocstring given a type that's not `type`: {type}"
             )
         self.type = type
 

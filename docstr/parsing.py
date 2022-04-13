@@ -495,14 +495,21 @@ class DocstringParser(object):
             name = attrib_body[0].astext()
 
             if name in args:
-                raise KeyError(f'Duplicate attribute: {name}')
+                raise KeyError(' '.join([
+                    'Duplicate attribute for class',
+                    f'`{get_full_qual_name(obj)}`: `{name}`',
+                ]))
 
             type_str = attrib_body[1].astext()
             parsed_types = self.re_typedoc.findall(type_str)
 
             num_parsed_types = len(parsed_types)
             if num_parsed_types < 1:
-                raise ValueError(f'No type found in parsing: {type_str}')
+                raise ValueError(' '.join([
+                    'No type found in parsing class',
+                    f'`{get_full_qual_name(obj)}`, attribute `{name}`:',
+                    f'{type_str}',
+               ]))
 
             if parsed_types[-1][1]:
                 default = self._get_object(obj, parsed_types[-1][1])
@@ -534,9 +541,19 @@ class DocstringParser(object):
                 found_types = MultiType(set(found_types))
             else:
                 found_types = found_types[0]
-                if self.whitelist \
-                    and get_full_qual_name(found_types) in self.whitelist:
-                    recursive_parse[name] = found_types
+                if self.whitelist:
+                    if found_types is None:
+                        recursive_parse[name] = found_types
+                    else:
+                        try:
+                            ft_qname = get_full_qual_name(found_types)
+                        except Exception as e:
+                            raise ValueError(' '.join([
+                                '`found_types` has unexpected value',
+                                f'`{found_types}` for attribute `{name}`',
+                            ])) from e
+                        if ft_qname in self.whitelist:
+                            recursive_parse[name] = found_types
 
             args[name] = ArgDoc(
                 name=name,
@@ -578,6 +595,8 @@ class DocstringParser(object):
         # Use docutils to parse the RST (one pass... followed by more.)
         doc = parse_rst(docstring)
 
+        qualified_name = get_full_qual_name(obj)
+
         if description := doc.first_child_not_matching_class(nodes.paragraph):
             description = '\n'.join(
                 [ch.astext() for ch in doc.children[:description]]
@@ -593,7 +612,9 @@ class DocstringParser(object):
                 AttributeBody
             )) is None:
                 # No Attribute Body
-                raise ValueError('The given docstring includes no fields!')
+                raise ValueError(
+                    f'Given docstring includes no fields: `{qualified_name}`'
+                )
             else:
                 # TODO replace quick HACK, this expects the remainder be attr
                 #   Seems good to separate func and attr parsing if not same
@@ -614,7 +635,6 @@ class DocstringParser(object):
             field_list = doc.children[field_list]
 
         # TODO doc linking of ALL args/attr from linked object.
-        qualified_name = get_full_qual_name(obj)
         self.parsed_tokens[qualified_name] = ValueExists.false
 
         # Prepare the paired dicts for params to catch dups, & missing pairs
@@ -636,11 +656,17 @@ class DocstringParser(object):
                     see_args_count += 1
                     continue
                 elif len(name) > 1:
-                    raise ValueError(f'Multiple param names: {name}')
+                    raise ValueError(' '.join([
+                        'Multiple param names for param of object',
+                        f"`{qualified_name}`: `{name}`",
+                    ]))
                 else:
                     name = name[0]
                 if name in params:
-                    raise KeyError(f'Duplicate parameter: {name}')
+                    raise KeyError(' '.join([
+                        f'Duplicate parameter for object `{qualified_name}`:',
+                        f'`{name}`',
+                    ]))
                 elif name in types: # Make ArgDoc w/ paired type
                     params[name] = ArgDoc(
                         name=name,
@@ -656,11 +682,17 @@ class DocstringParser(object):
             elif field_name[:4] == 'type':
                 name = self.re_name.findall(field_name)
                 if len(name) > 1:
-                    raise ValueError(f'Multiple type param names: {name}')
+                    raise ValueError(' '.join([
+                        f'Multiple type param names for object ',
+                        f"`{qualified_name}`: `{name}`",
+                    ]))
                 else:
                     name = name[0]
                 if name in types:
-                    raise KeyError(f'Duplicate parameter type: {name}')
+                    raise KeyError(' '.join([
+                        'Duplicate parameter type for object',
+                        f'`{qualified_name}`: `{name}`',
+                    ]))
 
                 # TODO support dataclass format: param = default -> type
                 type_str = field.children[1].astext()
@@ -668,7 +700,10 @@ class DocstringParser(object):
 
                 num_parsed_types = len(parsed_types)
                 if num_parsed_types < 1:
-                    raise ValueError(f'No type found in parsing: {type_str}')
+                    raise ValueError(' '.join([
+                        'No type found in parsing the object',
+                        f"{qualified_name}'s type param {name}: {type_str}",
+                    ]))
 
                 if parsed_types[-1][1]:
                     default = self._get_object(obj, parsed_types[-1][1])
@@ -1104,7 +1139,13 @@ class DocstringParser(object):
         # docstring of interest. As it defines the params to give, and thus
         # the args we care about.
         if isinstance(obj, FunctionType):
-            parsed_token = self.parse_func(obj)
+            try:
+                parsed_token = self.parse_func(obj)
+            except Exception as e:
+                raise ValueError(' '.join([
+                    'Error in parsing function object',
+                    f'`{get_full_qual_name(obj)}`',
+                ])) from e
             self.parsed_tokens[parsed_token.full_qual_name] = parsed_token
             return parsed_token
 
@@ -1113,7 +1154,13 @@ class DocstringParser(object):
         # docs, warn when encountering those without docs.
         #return self.parse_class(obj, name, obj_type)
 
-        parsed_token = self.parse_class(obj)
+        try:
+            parsed_token = self.parse_class(obj)
+        except Exception as e:
+            raise ValueError(' '.join([
+                'Error in parsing class object',
+                f'`{get_full_qual_name(obj)}`',
+            ])) from e
         self.parsed_tokens[parsed_token.full_qual_name] = parsed_token
         return parsed_token
 
