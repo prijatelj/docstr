@@ -241,7 +241,7 @@ def docstr_cap(config):
     """The docstr main ConfigArgParser."""
     # NOTE Does note need to be a sys_argv, can be a str positional in CAP.
     ext = os.path.splitext(config)[-1]
-    if ext != 'yaml':
+    if ext != '.yaml':
         raise NotImplementedError('Currently only yaml configs are supported.')
 
     # Parse the yaml config into the format for docstr prototype w/ CAP
@@ -284,7 +284,7 @@ def docstr_cap(config):
     #    getattr(cap_namespace, cap_namespace.docstr.prog_name)
     #)
 
-    #docstr.run(tokens, args)
+    return docstr.run(tokens, args)
 
 if __name__ == '__main__':
     from sys import argv as sys_argv
