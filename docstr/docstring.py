@@ -90,7 +90,7 @@ class MultiType(FrozenSet):
     @property
     def types(self):
         logging.warning(
-            'This will be depracted in future versions past prototype'
+            'MultiType.types will be depracted in versions past prototype'
         )
         return self
 
