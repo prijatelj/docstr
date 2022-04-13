@@ -6,7 +6,9 @@ from enum import Flag, unique
 from collections import OrderedDict
 from dataclasses import dataclass, InitVar
 from keyword import iskeyword
+import logging
 from types import FunctionType
+from typing import FrozenSet, Iterable
 ClassType = type
 
 import configargparse as cap
@@ -55,9 +57,10 @@ class ValueExists(Flag):
 
 # NOTE may use typing.Literal for this? Intended for checking return types, but
 # perhaps this as well in cases where literal instances are expected?
+"""A set of multiple types for when a variable may take multiple types."""
+"""
 @dataclass(frozen=True)
 class MultiType:
-    """A set of multiple types for when a variable may take multiple types."""
     types : frozenset
 
     # TODO handle some internal assessment property that notes if this is a
@@ -73,6 +76,23 @@ class MultiType:
     # equivalent method, especialy since MultiType.isinstance() would keep it
     # clear this is about being in one of the multiple types, but
     # isinstance(instance, {'set', 'of', 'types'}) is desirable.
+"""
+
+class MultiType(FrozenSet):
+    """A frozenset of multipe types. As a callable, casts the objects into one
+    of its types.
+    """
+    def __new__(cls, types: Iterable):
+        return super(MultiType, cls).__new__(cls, types)
+
+    #def __init__(self, types: Iterable)
+
+    @property
+    def types(self):
+        logging.warning(
+            'This will be depracted in future versions past prototype'
+        )
+        return self
 
     def check(self, objs):
         raise NotImplementedError('Consider pydantic? or extend argparse')
