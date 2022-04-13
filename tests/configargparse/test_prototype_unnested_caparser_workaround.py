@@ -74,22 +74,24 @@ class TestConfigArgParse:
         )
 
         prog_cap = cli.get_configargparser(tokens)
+        prog_yaml_args = getattr(namespace, namespace.docstr.prog_name).args
+        print('prog_yaml_args:', prog_yaml_args)
 
         # Unable to compare ArgumentParsers w/ `==`??? So compare parsed args
         #assert prog_cap == example_cli
         with open('tests/tmp_config.yaml', 'r') as openf:
             expected_config = yaml.safe_load(openf)
 
-        print(expected_config)
+        print('expected:', expected_config)
+
+        assert prog_yaml_args == expected_config
 
         # Able to pass the converted yaml dict to configargparse. ArgumentParser.
         # parse_args() using `config_file_contents=`
         assert (
             prog_cap.parse_known_args(
                 namespace=NestedNamespace(),
-                config_file_contents=yaml.dump(
-                    getattr(namespace, namespace.docstr.prog_name).args
-                ),
+                config_file_contents=yaml.dump(prog_yaml_args),
             )
             == example_cli.parse_known_args(
                 namespace=NestedNamespace(),
@@ -98,11 +100,10 @@ class TestConfigArgParse:
         )
 
 
-    # TODO test running of configargparse.ArgParser w/ NestedNamespace w/ tokens
-    #   Simply, the output will be func_2 defaults, by config as is, that's
-    #   func_choices' defaults.
-    @pytest.mark.xfail
+    # Test running of configargparse.ArgParser w/ NestedNamespace w/ tokens
+    # Simply, the output will be func_2 defaults, by config as is, that's
+    # func_choices' defaults.
     def test_run(self):
-        run_output = cli.docstr_cap('tests/numpy_example_config.yaml')
+        run_output = cli.docstr_cap('tests/numpy_example_config.yaml', True)
         expected_output = 'foobar'
         assert run_output == expected_output
