@@ -237,50 +237,6 @@ def parse_rst(text: str) -> nodes.document:
     return document
 
 
-def _obj_defaults(obj, name=None, obj_type=ValueExists.false):
-    """Given the object and optionally its information, return the object's
-    docstring, name, and object type.
-
-    Args
-    ----
-    obj : object | str
-        The object whose __doc__ is to be parsed. If a str object of the
-        docstring, then the `name` and `obj_type` parameters must be
-        provided.
-    name : str, optional
-        The name of the object whose docstring is being parsed. Only needs
-        to be supplied when the `obj` is a `str` of the docstring to be
-        parsed, otherwise not used.
-    obj_type : type, optional
-        The type of the object whose docstring is being parsed. Only needs
-        to be supplied when the `obj` is a `str` of the docstring to be
-        parsed, otherwise not used.
-
-    Returns
-    -------
-    (str, str, type)
-        A tuple of docstring, object name, and object type.
-    """
-    # TODO separate this explicit giving from the automated finding check
-    #   The explicit giving of names etc is weird and probs unnecessary.
-    if isinstance(obj, str):
-        if name is None:
-            raise ValueError('`fname` must be given if `obj` is a `str`.')
-        if obj_type is ValueExists.false:
-            raise ValueError('`obj_type` must be given if `obj` is a `str`.')
-        docstring = obj
-    else:
-        docstring =  obj.__doc__
-        if docstring is None:
-            raise ValueError('The docstring of object `{obj}` does not exist.')
-        if name is None:
-            name =  obj.__name__
-        if obj_type is ValueExists.false:
-            obj_type =  type(obj)
-
-    return docstring, name, obj_type
-
-
 class DocstringParser(object):
     """Docstring parser for a specific style and parser config.
 
@@ -1135,10 +1091,13 @@ class DocstringParser(object):
                 'parameters given.',
             ]))
 
-        # TODO if a class, then parse the __init__ too, but as the main
-        # docstring of interest. As it defines the params to give, and thus
-        # the args we care about.
+        # TODO this is recursive, so will call everytime up the chain, probably
+        # not desired. This is tmp hot informative fix till every error has the
+        # full qual name within it, thuse making these redundant and
+        # uninformative.
         if isinstance(obj, FunctionType):
+            # TODO this is recursive, so will call everytime up the chain,
+            # probably not desired.
             try:
                 parsed_token = self.parse_func(obj)
             except Exception as e:
@@ -1154,6 +1113,10 @@ class DocstringParser(object):
         # docs, warn when encountering those without docs.
         #return self.parse_class(obj, name, obj_type)
 
+        # TODO this is recursive, so will call everytime up the chain, probably
+        # not desired. This is tmp hot informative fix till every error has the
+        # full qual name within it, thuse making these redundant and
+        # uninformative.
         try:
             parsed_token = self.parse_class(obj)
         except Exception as e:

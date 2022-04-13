@@ -121,7 +121,6 @@ class BaseDoc:
 class ArgDoc(BaseDoc):
     """Dataclass for an argument/parameter in docstrings."""
     default : InitVar[object] = ValueExists.false
-    #choices : object = ValueExists.false
 
     def __post_init__(self, default):
         # Check if a valid name identifier for parameter (variable)
@@ -129,20 +128,6 @@ class ArgDoc(BaseDoc):
             raise ValueError(
                 f'`name` is an invalid parameter name: `{self.name}`'
             )
-
-        # TODO generalize this by extending InitVar to perform this in init.
-        # Default the "empty" value to None, possibly removing need to specify
-        # `= None` in the dataclass part. Just to expedite this cuz it is now
-        # repeated in this code, which itself is meant to expedite through
-        # write once... Probably would not inherity from InitVar, but do
-        # something similar-ish. Moreso generate the code snippet in the
-        # generated __init__(). could possibly even reorder positional args
-        # based on the order of inheritance.
-        if default is None: # TODO Wait what is wrong here???
-            raise TypeError(' '.join([
-                'ArgDoc() missing 1 required positional argument:',
-                '`default` Provide via keyword, if able to through position.',
-            ]))
         self.default = default
 
     def update_parser(self, parser, prefix=None):
