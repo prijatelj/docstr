@@ -13,4 +13,5 @@ very_useful_class.name: Hello World!
 very_useful_class.a: 3.14
 very_useful_class.b: 8
 very_useful_class.x: 100
-func_2: func_choices
+#func_2: func_choices
+func_2: tests.numpy_example_docstrings.func_choices

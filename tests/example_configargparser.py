@@ -7,10 +7,12 @@ from configargparse import (
     YAMLConfigFileParser,
 )
 
-from docstr.docstring import MultiType
 from docstr.configargparse import NestedNamespace #ArgumentParser
+from docstr.docstring import MultiType
+from docstr.parsing import get_module_object
 
 import tests.numpy_example_docstrings as examples
+
 
 
 def make_cli():
@@ -36,7 +38,8 @@ def make_cli():
 
     cli.add_argument(
         '--config',
-        type=yaml.safe_load, # TODO note C Safe loader for yaml.
+        #type=yaml.safe_load, # TODO note C Safe loader for yaml.
+        required=True,
         is_config_file=True,
         help="Configuration file path",
     )
@@ -58,40 +61,34 @@ def make_cli():
     sub_cli.add_argument(
         '--very_useful_class.name',
         help='The name associated with the object instance.',
-        dest='very_useful_class.name', # NOTE tmp; to be automated & unneeded
     )
     sub_cli.add_argument(
         '--very_useful_class.a',
         type=MultiType(frozenset({int, float})),
         help='First number in summation.',
-        dest='very_useful_class.a', # NOTE tmp; to be automated & unneeded
     )
     sub_cli.add_argument(
         '--very_useful_class.b',
         type=MultiType(frozenset({int, float})),
         help='Second number in summation.',
-        dest='very_useful_class.b', # NOTE tmp; to be automated & unneeded
     )
     sub_cli.add_argument(
         '--very_useful_class.x',
         type=MultiType(frozenset({int, float})),
         default=8,
         help='First number in multiplication.',
-        dest='very_useful_class.x', # NOTE tmp; to be automated & unneeded
     )
     sub_cli.add_argument(
         '--very_useful_class.y',
         type=MultiType(frozenset({int, float})),
         default=11,
         help='Second number in multiplication. This is an example of alternative specification of default. This support is included in order to be more inclusive of pre-existing standards used by others so that docstr could be applied to these cases. Docstr is intended to allow modifcation to their parsing regexes such that custom support for niche user cases may be handled by the user.',
-        dest='very_useful_class.y', # NOTE tmp; to be automated & unneeded
     )
     sub_cli.add_argument(
         '--very_useful_class.z',
         type=float,
         default=3.14159,
         help='An example of an attribute with a default value, typically set in init.',
-        dest='very_useful_class.z', # NOTE tmp; to be automated
     )
 
     # TODO add the sub/hierarchical ConfigArgParser as an argument
@@ -104,7 +101,8 @@ def make_cli():
     # TODO add a function/Callable argument
     cli.add_argument(
         '--func_2',
-        type=Callable, # TODO handle get function from str
+        type=get_module_object,
+        #type=Callable, # TODO handle get function from str
         # Enable getting from the docstr namespace w/ fallback to global import.
         #type=partial(docstr.parsing.get_namespace_obj(docstr_namespace))
         #type=partial(docstr.parsing.get_module_object) # For full qual names

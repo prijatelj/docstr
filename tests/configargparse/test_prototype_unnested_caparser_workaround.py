@@ -53,6 +53,10 @@ def test_prototype_yaml_dict_nested_conversion():
 #       any single type and MultiType: Make it (optionally) check if it can
 #       convert given the docstr namespace and "global module" context.
 
+def test_generate_configargparser():
+
+    assert True
+
 # TODO must be able to pass the converted yaml dict to
 #   configargparse.ArgumentParser.parse_args(), or somehow have same
 #   functionality.
