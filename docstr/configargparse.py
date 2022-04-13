@@ -146,8 +146,10 @@ class NestedNamespace(cap.Namespace):
         else:
             getattr(super(NestedNamespace, self), name)
 
-    def init(self):
-        """With `docstr_type` as a constant/default arg, not required, set to
+    def pre_init(self):
+        """This readies the NestedNamespace for initialization in run().
+
+        With `docstr_type` as a constant/default arg, not required, set to
         default to the object the rest of the args are for in this namespace
         this will create the actual object.
 
@@ -156,9 +158,22 @@ class NestedNamespace(cap.Namespace):
         All that is left is figurin out how to start from the leaves of the CAP
         and init down to root, or entry_object.
         """
+        pre_nn = NestedNamespace()
+
+        # tmp placeholder for the current nested arg name being initialized.
+        pre_nn.docstr_waiting_arg = None
+        pre_nn.docstr_args = dict()
+        pre_nn.docstr_nested_args = dict()
+
         args = vars(self)
-        obj = args.pop('docstr_type')
-        return obj(**args)
+        for key, val in args.items():
+            if key == 'docstr_type':
+                pre_nn.docstr_type = val
+            elif isinstance(val, NestedNamespace):
+                pre_nn.docstr_nested_args[key] = val
+            else:
+                pre_nn.docstr_args[key] = val
+        return pre_nn
 
 
 # TODO str conversion into objects of expected types
@@ -251,6 +266,13 @@ def get_configargparser(
     else:
         raise TypeError(f'Unexpected `parser` type: {type(parser)}')
 
+    nested_parser.add_argument(
+        f'--{nested_prefix}.docstr_type' if nested_prefix else '--docstr_type',
+        type=type,
+        help='docstr internal argument to enable NestedNamespace.init()',
+        default=docstring.type,
+    )
+
     # TODO If any Class/FuncDocstring classes in type: recursive call get_cap()
     recursive_args = {}
     for arg_key, arg in args.items():
@@ -325,8 +347,9 @@ def get_configargparser(
 #   it can use the configs, then it can if desired.
 
 
-def run(tokens, docstr_args, prog_args):
+def init_prog(prog_args):
     """Run the program given parsed tokens and the ConfigArgParser arguments.
+
     Args
     ----
     tokens : ClassDocstring | FuncDocstring
@@ -339,14 +362,21 @@ def run(tokens, docstr_args, prog_args):
     # involves a depth first traversal to do so if do not have the leaf objects
     # already.
 
-    # TODO Align the traversal of initialization between the tokens & cap_args
-    token_stack = []
-    while token_stack:
-        if isinstance(token_stack[-1], (ClassDocstring, FuncDocstring)):
-            # token has next configurable token in its args
-            pass
-        else: # token is the leaf: last configurable token: Class/FuncDocstring
-            # TODO initialize the token w/ its respective CAP.
-            token_to_init = token_stack.pop()
-
-    return
+    # When adding to stack, change Namespace into dict of keys: docstr_type,
+    # args, nested_args. While nested_args is not an empty list/dict, depth
+    # traversal. Once empyty, create the object for that namespace
+    cap_stack = [prog_args.pre_init()]
+    while cap_stack:
+        if cap_stack[-1].docstr_nested_args:
+            # cap has next configurable cap in its args (NestedNamespace exist)
+            key, val = cap_stack[-1].docstr_nested_args.popitem()
+            cap_stack[-1].docstr_waiting_arg = key
+            cap_stack.append(val.pre_init())
+        else: # current cap is the leaf: last configurable cap
+            # Reasign this NestedNamespace to its initialized object
+            cap_init = cap_stack.pop()
+            if cap_stack:
+                cap_stack[-1].docstr_args[cap_stack[-1].docstr_waiting_arg] = \
+                    cap_init.docstr_type(**cap_init.docstr_args)
+            #else: cap_init is the entry object
+    return cap_init.docstr_type(**cap_init.docstr_args)
