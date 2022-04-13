@@ -87,13 +87,6 @@ class MultiType(FrozenSet):
 
     #def __init__(self, types: Iterable)
 
-    @property
-    def types(self):
-        logging.warning(
-            'MultiType.types will be depracted in versions past prototype'
-        )
-        return self
-
     def check(self, objs):
         raise NotImplementedError('Consider pydantic? or extend argparse')
         # TODO for this to be worth an object, type checking/handling needs
@@ -102,14 +95,14 @@ class MultiType(FrozenSet):
         # take object and tuple types?
 
     def __call__(self, x):
-        for cast_type in self.types:
+        for cast_type in self:
             try:
                 return cast_type(x)
             except ValueError as err:
                 pass
         raise ValueError(' '.join([
             f'The given object `{x}` is not cast-able to any of the types:'
-            f'{self.types}'
+            f'{self}'
         ]))
 
 

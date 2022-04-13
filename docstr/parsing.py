@@ -196,9 +196,6 @@ class AttributeDirective(rst.Directive):
         # Raise an error if the directive does not have contents.
         self.assert_has_content()
 
-        print(self.name)
-        print(self.arguments)
-
         node = AttributeBody()
         name_node = AttributeName()
         name_node += nodes.Text(self.arguments[0])
