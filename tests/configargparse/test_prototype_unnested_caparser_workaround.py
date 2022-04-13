@@ -84,22 +84,19 @@ def test_generate_configargparser():
 
     print(expected_config)
 
+    # Able to pass the converted yaml dict to configargparse. ArgumentParser.
+    # parse_args() using `config_file_contents=`
     assert (
         prog_cap.parse_known_args(
-            None,
             namespace=NestedNamespace(),
             config_file_contents=yaml.dump(expected_config),
         )
         == example_cli.parse_known_args(
-            None,
             namespace=NestedNamespace(),
             config_file_contents=yaml.dump(expected_config),
         )
     )
 
-# TODO must be able to pass the converted yaml dict to
-#   configargparse.ArgumentParser.parse_args(), or somehow have same
-#   functionality.
 
 # TODO test running of configargparse.ArgParser w/ NestedNamespace w/ tokens
 #   Simply, the output will be func_2 defaults, by config as is, that's
