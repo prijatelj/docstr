@@ -183,10 +183,15 @@ def get_configargparser(
         arguments instead of keyword required arguments. The default is
         False, meaning any required argument is made as a required keyword
         argument, non-positional.
+
+    Returns
+    -------
+    configargparse.ArgumentParser | configargparse._ArgumentGroup
     """
+    # Type checking of docstring and setting up: args, description, etc.
     if isinstance(docstring, ClassDocstring):
         description = \
-            f'{docstring.description}\n \n{docstring.init.description}'
+            f'{docstring.description}\n __init__: \n{docstring.init.description}'
         # TODO store the object in type to recreate the object post CAP parse
         args = docstring.init.args
     elif isinstance(docstring, FuncDocstring):
@@ -233,7 +238,7 @@ def get_configargparser(
     # TODO If any Class/FuncDocstring classes in type: recursive call get_cap()
     recursive_args = {}
     for arg_key, arg in args.items():
-        if nested_prefix:
+        if nested_prefix: # TODO this will be handled by the NestedArgumentParser
             name = f'{nested_prefix}.{arg.name}'
         else:
             name = arg.name
@@ -241,10 +246,11 @@ def get_configargparser(
         # For `required` and any other args handled similarly by argparse
         arg_kwargs = {}
 
-        if not nested_positionals:
-            name = f'--{name}'
-            if arg.default is ValueExists.false:
-                arg_kwargs['required'] = True
+        if nested_positionals:
+            raise NotImplementedError('nested positoinals is not supported.')
+
+        if arg.default is ValueExists.false:
+            arg_kwargs['required'] = True
 
         # TODO handle alias of single letter, perhaps splat expand list?
         #   Seems a list may be given w/o error, so just make name a list.
@@ -263,12 +269,22 @@ def get_configargparser(
             recursive_args[arg_key].update(arg_kwargs)
             continue
         elif isinstance(arg.type, MultiType):
+            # TODO consider MultiType allowing recusive config gen
+
+            # TODO consider case when parent class given, but not the actual
+            # class that'd need configured. This would be resolved by allowing
+            # "live parse" or "JIT compilation" of an object/config given
+            # within this arg.
+
             raise NotImplementedError('Support choices.')
+            all_literals = all([not isinstance(t, type) for t in arg.type])
+
+            # TODO choices is if there are only literals in type/MultiType.
             # TODO ensure MultiType treated as set/container
             arg_kwargs['choices'] = arg.type
 
         nested_parser.add_argument(
-            name,
+            f'--{name}',
             type=arg.type,
             help=desc,
             default=default,
@@ -279,8 +295,8 @@ def get_configargparser(
     for rec_args, rec_arg_parts in recursive_args.items():
         arg = args[rec_args]
         get_configargparser(
-            arg['type'],
-            arg['name'],
+            rec_arg_parts['type'],
+            rec_arg_parts['name'],
             nested_parser,
             nested_positionals,
         )
