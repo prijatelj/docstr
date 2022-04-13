@@ -276,12 +276,10 @@ def get_configargparser(
             # "live parse" or "JIT compilation" of an object/config given
             # within this arg.
 
-            raise NotImplementedError('Support choices.')
+            # choices is if there are only literals in type/MultiType.
             all_literals = all([not isinstance(t, type) for t in arg.type])
-
-            # TODO choices is if there are only literals in type/MultiType.
-            # TODO ensure MultiType treated as set/container
-            arg_kwargs['choices'] = arg.type
+            if all_literals:
+                arg_kwargs['choices'] = arg.type
 
         nested_parser.add_argument(
             f'--{name}',
@@ -293,7 +291,6 @@ def get_configargparser(
 
     # TODO this begs for trivial parallelization, possibly async creation
     for rec_args, rec_arg_parts in recursive_args.items():
-        arg = args[rec_args]
         get_configargparser(
             rec_arg_parts['type'],
             rec_arg_parts['name'],
