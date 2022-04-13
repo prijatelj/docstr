@@ -676,9 +676,11 @@ class DocstringParser(object):
                             parsed_types[2][0],
                         )
                     elif num_parsed_types > 3:
-                        raise ValueError(
-                            f'More than 3 elements for doc linking: {type_str}'
-                        )
+                        raise ValueError(' '.join([
+                            'More than 3 elements for doc linking found in',
+                            f"object `{qualified_name}`'s param",
+                            f': {type_str}',
+                        ]))
                     continue # TODO handle dups/missing type/param check
 
                 found_types = []
@@ -711,7 +713,10 @@ class DocstringParser(object):
             elif field_name == 'returns':
                 if isinstance(returns, BaseDoc):
                     if returns.name == 'returns': # only set here
-                        raise KeyError('Multiple `returns` fields exist!')
+                        raise ValueError(' '.join([
+                            'Multiple `returns` fields exist in object',
+                            f'`{qualified_name}`',
+                        ]))
                     returns.name = 'returns'
                     returns.description = field.children[1].astext()
                 else:
@@ -723,7 +728,10 @@ class DocstringParser(object):
                 if isinstance(returns, BaseDoc):
                     if returns.name != 'returns' \
                         or returns.type != ValueExists.false:
-                        raise KeyError('Multiple `rtype` fields exist!')
+                        raise ValueError(' '.join([
+                            'Multiple `rtype` fields exist in object',
+                            f'`{qualified_name}`',
+                        ]))
                     # TODO Namespace grabbing of types... not just store str
                     returns.type = self._get_object(
                         obj,
@@ -781,17 +789,21 @@ class DocstringParser(object):
 
             for linked_obj in see_params:
                 if linked_obj in linked_obj_set:
-                    raise ValueError('Duplicate linked object: {linked_obj}')
+                    raise ValueError(' '.join([
+                        'Duplicate linked object `{linked_obj}` found when',
+                        f'parsing `{qualified_name}`',
+                    ]))
                 if linked_obj == 'self':
                     if not isinstance(parent, OrderedDict):
-                        raise TypeError(
-                            'Given parent `see self` is not an OrderedDict'
-                        )
+                        raise TypeError(' '.join([
+                            'Given parent `see self` is not an OrderedDict',
+                            f'when parsing object `{qualified_name}`, instead',
+                            f'given parent is type `{type(parent)}`.'
+                        ]))
                     parsed_args = deepcopy(parent)
                 else:
-                    linked_obj = self._get_object(obj, linked_obj)
                     parsed_obj = self.parse(
-                        linked_obj,
+                        self._get_object(obj, linked_obj),
                         recursion_limit=recursion_limit + 1,
                     )
                     if isinstance(parsed_obj, ClassDocstring):
@@ -801,7 +813,11 @@ class DocstringParser(object):
 
                 # Check for duplicates and update unique args and linked_objs
                 if dups := growing_arg_set & parsed_args.keys():
-                    raise ValueError('Duplicate arg name: {dups}')
+                    raise ValueError(' '.join([
+                        'Duplicate arg name found when adding parsed args',
+                        f'from linked object `{linked_obj}` to current object',
+                        f'`{qualified_name}`: {dups}',
+                    ]))
                 growing_arg_set |= parsed_args.keys()
                 linked_obj_set.add(linked_obj)
 
@@ -866,16 +882,21 @@ class DocstringParser(object):
                     if parent: # Given parent class attributes from parse_class
                         parent_attr = parent
                         if not isinstance(parent_attr, OrderedDict):
-                            raise TypeError(
-                                'Given parent `see self` is not an OrderedDict'
-                            )
+                            raise TypeError(' '.join([
+                                'Given parent `see self` is not an',
+                                'OrderedDict when parsing object',
+                                f'`{qualified_name}`, instead',
+                                f'given parent is type `{type(parent)}`.'
+                            ]))
                     else:
                         parent_attr = self.parsed_tokens[parent_qname]
 
                         if not isinstance(parent_attr, ClassDocstring):
-                            raise TypeError(
-                                'Parent is not a Class when using `see self`'
-                            )
+                            raise TypeError(' '.join([
+                                'Parent is not a Class when using `see self`',
+                                f'in `{qualified_name}`, instead',
+                                f'parent is type `{type(parent_attr)}`.'
+                            ]))
                         parent_attr = parent_attr.attributes
 
                     if arg_name:
@@ -895,7 +916,10 @@ class DocstringParser(object):
                     params[name] = parsed_arg
                     types[name] = ValueExists.true
                 else:
-                    raise NotImplementedError('Doc linking w/o `see self`.')
+                    raise NotImplementedError(' '.join([
+                        f'Doc linking w/o `see self`. Linked `{linked_obj}`',
+                        f'in parsing `{qualified_name}`.',
+                    ]))
 
                 """
                 # Throw error if infinite looping of doc linking
@@ -913,9 +937,10 @@ class DocstringParser(object):
 
         # Any unmatched pairs of params and types raises an error
         if xor_set := set(types) ^ set(params):
-            raise ValueError(
-                f'Unmatched params and types in the docstring: {xor_set}'
-            )
+            raise ValueError(' '.join([
+                'Unmatched params and types in the docstring of object',
+                f'{qualified_name}: {xor_set}'
+            ]))
 
         if not params:
             params = None
@@ -961,7 +986,8 @@ class DocstringParser(object):
 
         # Obtain the class' __init__ docstring
         # TODO Beware if this qname does not match.
-        init_qname = f'{get_full_qual_name(obj)}.__init__'
+        qname = get_full_qual_name(obj)
+        init_qname = f'{qname}.__init__'
         if init_qname in self.parsed_tokens:
             init = self.parsed_tokens[init_qname]
         else:
@@ -978,7 +1004,7 @@ class DocstringParser(object):
                 # used to assign to the attribute without any change to its
                 # value (attrib = arg).
                 raise NotImplementedError(
-                    'init w/o docstrings are not supported yet.'
+                    f'init w/o docstrings are not supported yet. {init_qname}',
                 )
             init = self.parse_func(
                 init_obj,
@@ -1098,13 +1124,7 @@ class DocstringParser(object):
         if isinstance(obj, FunctionType):
             # TODO this is recursive, so will call everytime up the chain,
             # probably not desired.
-            try:
-                parsed_token = self.parse_func(obj)
-            except Exception as e:
-                raise ValueError(' '.join([
-                    'Error in parsing function object',
-                    f'`{get_full_qual_name(obj)}`',
-                ])) from e
+            parsed_token = self.parse_func(obj)
             self.parsed_tokens[parsed_token.full_qual_name] = parsed_token
             return parsed_token
 
@@ -1117,13 +1137,7 @@ class DocstringParser(object):
         # not desired. This is tmp hot informative fix till every error has the
         # full qual name within it, thuse making these redundant and
         # uninformative.
-        try:
-            parsed_token = self.parse_class(obj)
-        except Exception as e:
-            raise ValueError(' '.join([
-                'Error in parsing class object',
-                f'`{get_full_qual_name(obj)}`',
-            ])) from e
+        parsed_token = self.parse_class(obj)
         self.parsed_tokens[parsed_token.full_qual_name] = parsed_token
         return parsed_token
 
