@@ -37,13 +37,13 @@ def make_cli():
         config_file_parser_class=YAMLConfigFileParser,
     )
 
-    cli.add_argument(
-        '--config',
-        #type=yaml.safe_load, # TODO note C Safe loader for yaml.
-        #required=True,
-        is_config_file=True,
-        help="Configuration file path",
-    )
+    #cli.add_argument(
+    #    '--config',
+    #    #type=yaml.safe_load, # TODO note C Safe loader for yaml.
+    #    #required=True,
+    #    is_config_file=True,
+    #    help="Configuration file path",
+    #)
 
     # TODO Create a sub/hierarchical ConfigArgParser
     #nested_parsers = cli.add_nested_parsers()
