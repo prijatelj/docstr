@@ -357,12 +357,12 @@ class NumpyDocClassRecursiveParse(object):
         """
         self.very_useful_class = very_useful_class
         if func_2 is None:
-            self.func2 = func_defaults
+            self.func_2 = func_defaults
         else:
-            self.func2 = func2
+            self.func_2 = func_2
 
     def run(self, *args, **kwargs):
-        return func_2(*args, **kwargs)
+        return self.func_2(*args, **kwargs)
 
 
 class NumpyDocClassLinking(NumpyDocClass):
