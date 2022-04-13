@@ -45,6 +45,13 @@ def make_cli():
     #    help="Configuration file path",
     #)
 
+    cli.add_argument(
+        '--docstr_type',
+        type=type,
+        help='docstr internal argument to enable NestedNamespace.init()',
+        default=examples.NumpyDocClassRecursiveParse,
+    )
+
     # TODO Create a sub/hierarchical ConfigArgParser
     #nested_parsers = cli.add_nested_parsers()
 
@@ -52,6 +59,13 @@ def make_cli():
         'very_useful_class',
         #'NumpyDocClass',
         """NumpyDocClass: This is an example class with Numpy docstrings. Short description ends. This is the beginning of the long descriptions, which can essentially be arbitrary text until the next section/field occurs.\n# TODO include MathTex/LaTeX math here to ensure parsing works with it. I don't think I can use the $ character to delimit docstr linking as MathTex may use it! So I need to ensure the character I use is commonly NOT used by other things wrt docstrings. Perhaps I could just use the markdown for hyperlinking, but use some indication of namespace / within code linking.\n# TODO Include example of hyperlinking in long description""",
+    )
+
+    sub_cli.add_argument(
+        '--very_useful_class.docstr_type',
+        type=type,
+        help='docstr internal argument to enable NestedNamespace.init()',
+        default=examples.NumpyDocClass,
     )
 
     # TODO If possible, rather than having to chain `dest` params with the
