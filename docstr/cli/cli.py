@@ -241,8 +241,12 @@ def prototype_hack_reformat_yaml_dict_unnested_cap(config_path):
     return cap_namespace
 
 
-def docstr_cap(config, known_args=False):
+def docstr_cap(config=None, known_args=True):
     """The docstr main ConfigArgParser."""
+    if config is None:
+        from sys import argv as sys_argv
+        config = sys_argv[1]
+
     # NOTE Does note need to be a sys_argv, can be a str positional in CAP.
     ext = os.path.splitext(config)[-1]
     if ext != '.yaml':
@@ -312,5 +316,4 @@ def docstr_cap(config, known_args=False):
 
 
 if __name__ == '__main__':
-    from sys import argv as sys_argv
-    docstr_cap(sys_argv[1])
+    docstr_cap()

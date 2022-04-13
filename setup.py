@@ -24,7 +24,6 @@ setup(
     author='Derek S. Prijatelj',
     author_email='dprijate@nd.edu',
     packages=[f'{project_name}.{pkg}' for pkg in find_packages(project_name)],
-    #scripts
     description=' '.join([
         'Docstring parsing for generating argument and config parsers and',
         'expediting the common coding processes.',
@@ -39,4 +38,8 @@ setup(
         'License :: OSI Approved :: MIT License',
         'Operating System :: OS Independent',
     ],
+    # scripts
+    entry_points={
+        'console_scripts': [f'{project_name}={project_name}.cli.cli:docstr_cap']
+    },
 )
