@@ -1157,7 +1157,7 @@ def parse_config(docstr_args, prog_args):
     return parse(
         docstr_args.entry_obj,
         style=docstr_args.style,
-        whitelist=docstr.whitelist,
+        whitelist=docstr_args.whitelist,
     )
 
     # TODO After the CAP for this program is made, use to run the program given

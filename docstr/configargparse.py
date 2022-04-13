@@ -188,7 +188,7 @@ def get_configargparser(
 
     Returns
     -------
-    configargparse.ArgumentParser | configargparse._ArgumentGroup
+    configargparse.ArgumentParser | argparse._ArgumentGroup
     """
     # Type checking of docstring and setting up: args, description, etc.
     if isinstance(docstring, ClassDocstring):
@@ -223,7 +223,7 @@ def get_configargparser(
             description=description,
             config_file_parser_class=config_file_parser,
         )
-    elif isinstance(parser, {cap.ArgParser, cap._ArgumentGroup}):
+    elif isinstance(parser, (cap.ArgParser, cap.argparse._ArgumentGroup)):
         # Create the subparsers and pass that down any recursive get_cap()
         # TODO Once a Nested Parser is supported, replace this w/ that
         # This should never occur if docstr cli is used, as that makes
@@ -261,7 +261,7 @@ def get_configargparser(
         desc= None if arg.description is ValueExists.false else arg.description
 
         # TODO handle arg type
-        if isinstance(arg.type, {ClassDocstring, FuncDocstring}):
+        if isinstance(arg.type, (ClassDocstring, FuncDocstring)):
             recursive_args[arg_key] = {
                 'name': name,
                 'type': arg.type,

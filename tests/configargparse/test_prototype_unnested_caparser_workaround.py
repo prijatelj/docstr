@@ -6,10 +6,17 @@ configs as desired by docstr intended use cases.
 """
 import yaml
 
+import pytest
+
 from docstr.cli import cli
 from docstr.configargparse import NestedNamespace
-import tests.numpy_example_docstrings as examples
+from docstr.parsing import parse_config
 
+import tests.numpy_example_docstrings as examples
+from tests.example_configargparser import make_cli
+
+
+@pytest.mark.dependency(name='prototype_conversion')
 def test_prototype_yaml_dict_nested_conversion():
     namespace = cli.prototype_hack_reformat_yaml_dict_unnested_cap(
         'tests/numpy_example_config.yaml'
@@ -53,9 +60,25 @@ def test_prototype_yaml_dict_nested_conversion():
 #       any single type and MultiType: Make it (optionally) check if it can
 #       convert given the docstr namespace and "global module" context.
 
+@pytest.mark.dependency(depends=['prototype_conversion'])
+#@pytest.mark.xfail
 def test_generate_configargparser():
+    example_cli = make_cli()
+    #example_args = example_cli.parse_args(namespace=NestedNamesace())
 
-    assert True
+    namespace = cli.prototype_hack_reformat_yaml_dict_unnested_cap(
+        'tests/numpy_example_config.yaml'
+    )
+
+    tokens = parse_config(
+        namespace.docstr,
+        getattr(namespace, namespace.docstr.prog_name),
+    )
+
+    prog_cap = cli.get_configargparser(tokens)
+
+    # Unable to compare ArgumentParsers w/ `==`??? So compare parsed args
+    assert prog_cap == example_cli
 
 # TODO must be able to pass the converted yaml dict to
 #   configargparse.ArgumentParser.parse_args(), or somehow have same
