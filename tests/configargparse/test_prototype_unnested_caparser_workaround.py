@@ -87,7 +87,9 @@ class TestConfigArgParse:
         assert (
             prog_cap.parse_known_args(
                 namespace=NestedNamespace(),
-                config_file_contents=yaml.dump(expected_config),
+                config_file_contents=yaml.dump(
+                    getattr(namespace, namespace.docstr.prog_name).args
+                ),
             )
             == example_cli.parse_known_args(
                 namespace=NestedNamespace(),
@@ -99,7 +101,7 @@ class TestConfigArgParse:
     # TODO test running of configargparse.ArgParser w/ NestedNamespace w/ tokens
     #   Simply, the output will be func_2 defaults, by config as is, that's
     #   func_choices' defaults.
-    #@pytest.mark.xfail
+    @pytest.mark.xfail
     def test_run(self):
         run_output = cli.docstr_cap('tests/numpy_example_config.yaml')
         expected_output = 'foobar'
