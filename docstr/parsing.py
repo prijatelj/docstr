@@ -132,7 +132,7 @@ def get_object(namespace_obj, name, default=ValueExists.false):
     """
     #try: # Check if the given str exists in a global context
     try:
-        try:
+        try: # TODO prioritize: literals, locals, globals, then builtins
             return get_builtin(name, default)
         except AttributeError as e_built_in:
             # TODO getmodule does not support all cases! You want to pass the
