@@ -19,4 +19,4 @@ NumpyDocClassRecursiveParse:
       b: 8
       x: 100
   #func_2: func_choices # TODO get from docstr.namespace
-  func_2: tests.numpy_example_docstrings.func_choices
+  #func_2: tests.numpy_example_docstrings.func_choices

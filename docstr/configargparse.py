@@ -192,8 +192,8 @@ def get_configargparser(
     """
     # Type checking of docstring and setting up: args, description, etc.
     if isinstance(docstring, ClassDocstring):
-        description = \
-            f'{docstring.description}\n __init__: \n{docstring.init.description}'
+        description = docstring.description
+            #f'{docstring.description}\n __init__: \n{docstring.init.description}'
         # TODO store the object in type to recreate the object post CAP parse
         args = docstring.init.args
     elif isinstance(docstring, FuncDocstring):
@@ -300,7 +300,8 @@ def get_configargparser(
             nested_positionals,
         )
 
-    return parser
+    return nested_parser
+
 
 # TODO Either here or docstr/cli make ConfigArgParser for hardware & logging
 #   the hardware and logging can inform what parallelization docstr may use, or

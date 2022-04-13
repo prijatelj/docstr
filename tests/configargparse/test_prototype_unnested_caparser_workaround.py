@@ -78,7 +78,24 @@ def test_generate_configargparser():
     prog_cap = cli.get_configargparser(tokens)
 
     # Unable to compare ArgumentParsers w/ `==`??? So compare parsed args
-    assert prog_cap == example_cli
+    #assert prog_cap == example_cli
+    with open('tests/tmp_config.yaml', 'r') as openf:
+        expected_config = yaml.safe_load(openf)
+
+    print(expected_config)
+
+    assert (
+        prog_cap.parse_known_args(
+            None,
+            namespace=NestedNamespace(),
+            config_file_contents=yaml.dump(expected_config),
+        )
+        == example_cli.parse_known_args(
+            None,
+            namespace=NestedNamespace(),
+            config_file_contents=yaml.dump(expected_config),
+        )
+    )
 
 # TODO must be able to pass the converted yaml dict to
 #   configargparse.ArgumentParser.parse_args(), or somehow have same
