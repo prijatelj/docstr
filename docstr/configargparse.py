@@ -146,6 +146,20 @@ class NestedNamespace(cap.Namespace):
         else:
             getattr(super(NestedNamespace, self), name)
 
+    def init(self):
+        """With `docstr_type` as a constant/default arg, not required, set to
+        default to the object the rest of the args are for in this namespace
+        this will create the actual object.
+
+        Note
+        ----
+        All that is left is figurin out how to start from the leaves of the CAP
+        and init down to root, or entry_object.
+        """
+        args = vars(self)
+        obj = args.pop('docstr_type')
+        return obj(**args)
+
 
 # TODO str conversion into objects of expected types
 #   This is already supported for "common built-in types and functions".
@@ -309,3 +323,30 @@ def get_configargparser(
 #   involves solving the issue of communication from docstr to an arbitrary
 #   python program. Could just be optoinally used by the python program, so if
 #   it can use the configs, then it can if desired.
+
+
+def run(tokens, docstr_args, prog_args):
+    """Run the program given parsed tokens and the ConfigArgParser arguments.
+    Args
+    ----
+    tokens : ClassDocstring | FuncDocstring
+        The parsed tokens of the python program's docstrings.
+    cap_args : NestedNamespace
+        The resulting argument values in a nested namespace from running the
+        configargparse.ArgumentParser for the python program.
+    """
+    # TODO Need to initialize the leaves first and work the way down, which
+    # involves a depth first traversal to do so if do not have the leaf objects
+    # already.
+
+    # TODO Align the traversal of initialization between the tokens & cap_args
+    token_stack = []
+    while token_stack:
+        if isinstance(token_stack[-1], (ClassDocstring, FuncDocstring)):
+            # token has next configurable token in its args
+            pass
+        else: # token is the leaf: last configurable token: Class/FuncDocstring
+            # TODO initialize the token w/ its respective CAP.
+            token_to_init = token_stack.pop()
+
+    return
