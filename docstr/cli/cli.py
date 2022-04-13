@@ -7,7 +7,11 @@ import yaml
 import configargparse as cap
 
 from docstr import parse_config #, parse
-from docstr.configargparse import NestedNamespace, get_configargparser, run
+from docstr.configargparse import (
+    NestedNamespace,
+    get_configargparser,
+    init_prog,
+)
 from docstr.docstring import get_full_qual_name
 
 # TODO Run ConfigArgParse subparser
@@ -237,7 +241,7 @@ def prototype_hack_reformat_yaml_dict_unnested_cap(config_path):
     return cap_namespace
 
 
-def docstr_cap(config):
+def docstr_cap(config, known_args=False):
     """The docstr main ConfigArgParser."""
     # NOTE Does note need to be a sys_argv, can be a str positional in CAP.
     ext = os.path.splitext(config)[-1]
@@ -280,15 +284,31 @@ def docstr_cap(config):
     # TODO run the program with the parsed tokens and aligned CAP values
     #getattr(**prog_cap.parse_args(args.prog_args), docstr_args.main)()
 
-    args = prog_cap.parse_args(
-        namespace=NestedNamespace(),
-        config_file_contents=yaml.dump(
-            getattr(cap_namespace, cap_namespace.docstr.prog_name)
-        ),
-    )
+    if known_args:
+        args = prog_cap.parse_known_args(
+            namespace=NestedNamespace(),
+            config_file_contents=yaml.dump(
+                getattr(cap_namespace, cap_namespace.docstr.prog_name).args
+            ),
+        )[0]
+    else:
+        args = prog_cap.parse_args(
+            namespace=NestedNamespace(),
+            config_file_contents=yaml.dump(
+                getattr(cap_namespace, cap_namespace.docstr.prog_name).args
+            ),
+        )
     #setattr(cap_namespace, cap_namespace.docstr.prog_name, args)
 
-    return run(tokens, cap_namespace, args)
+    prog_ready = init_prog(args)
+
+    # Based on cap_namespace.docstr main and entry_obj, run the init prog.
+    if cap_namespace.docstr.main == cap_namespace.docstr.entry_obj.__name__:
+        # Then it is a callable object to be run
+        return prog_ready()
+
+    # Is a class with main being a method on it to be called to run
+    return getattr(prog_ready, cap_namespace.docstr.main)()
 
 
 if __name__ == '__main__':
