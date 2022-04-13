@@ -7,7 +7,7 @@ import yaml
 import configargparse as cap
 
 from docstr import parse_config #, parse
-from docstr.configargparse import NestedNamespace, get_configargparser
+from docstr.configargparse import NestedNamespace, get_configargparser, run
 from docstr.docstring import get_full_qual_name
 
 # TODO Run ConfigArgParse subparser
@@ -280,11 +280,16 @@ def docstr_cap(config):
     # TODO run the program with the parsed tokens and aligned CAP values
     #getattr(**prog_cap.parse_args(args.prog_args), docstr_args.main)()
 
-    #args= prog_cap.parse_args(
-    #    getattr(cap_namespace, cap_namespace.docstr.prog_name)
-    #)
+    args = prog_cap.parse_args(
+        namespace=NestedNamespace(),
+        config_file_contents=yaml.dump(
+            getattr(cap_namespace, cap_namespace.docstr.prog_name)
+        ),
+    )
+    #setattr(cap_namespace, cap_namespace.docstr.prog_name, args)
 
-    return docstr.run(tokens, args)
+    return run(tokens, cap_namespace, args)
+
 
 if __name__ == '__main__':
     from sys import argv as sys_argv
