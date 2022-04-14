@@ -415,13 +415,21 @@ class DocstringParser(object):
             if self.namespace is not None:
                 obj_instance = get_namespace_obj(self.namespace, name, default)
 
-        if obj_instance is None and name != 'None':
+        try:
+            if obj_instance is None and name != 'None':
+                raise ValueError(' '.join([
+                    'DocstringParser._get_object() got `None` as object',
+                    "instance and name is not 'None'",
+                    f'\nnamespace_obj = {namespace_obj}\n',
+                    f'name = {name}',
+                ]))
+        except UnboundLocalError as e:
             raise ValueError(' '.join([
-                'DocstringParser._get_object() got `None` as object instance',
-                "And name is not 'None'",
+                'DocstringParser._get_object() could not get object instance',
                 f'\nnamespace_obj = {namespace_obj}\n',
                 f'name = {name}',
-            ]))
+            ])) from e
+
         return obj_instance
 
     def _parse_initial(self, docstring):
