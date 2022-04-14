@@ -1,4 +1,4 @@
-## Docstr : Docstring Parsing for Writing Once
+## Docstr : Python Docstring Parsing for Writing Once
 
 Given properly written docstrings that would be used to create auto-docs through Sphinx, `docstr` can use those docstrings at runtime to expedite certain programming practices, such as the creation of argument and config parsers, the modular configuration of piplines of both OOP and funcitonal python components, and reduce code duplication.
 
