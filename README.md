@@ -23,9 +23,9 @@ Given properly written docstrings that would be used to create auto-docs through
     - dependent on docutils and sphinx for conversion of styles to rst
     - uses regex for parsing and tokenizing the docstrings
     - **Tokenize**: The resulting tokens of parsing
-        - TODO Syntax check the docstrings to ensure properly written
+        - [-TODO-] Syntax check the docstrings to ensure properly written
             - may be done live during the parsing process, or afterwards.
-        - TODO Optionally syntax check the docstrings to the objects to ensure they match expectations, e.g., the args in doc are as they are expected by a function.
+        - {-TODO-} Optionally syntax check the docstrings to the objects to ensure they match expectations, e.g., the args in doc are as they are expected by a function.
         - tokenized docstrings enable colorized docstrings in editors.
         - The tokenized objects need to be in a useful enough and general enough format that enables ease of integration into down-stream "compile" software, such as (TODO) pydantic for type checking, or ConfigArgParse for CLI and config parsers (done).
         - TODO Allow for "pre-parsed" docstrings in the case where a docstring is from a 3rd party and is not supported by existing docstr parsing standards.
