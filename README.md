@@ -47,7 +47,7 @@ Given properly written docstrings that would be used to create auto-docs through
 
 #### Prototype
 
-The prototype provides the following features, albeit within contrained use cases as it is a prototype.
+The prototype provides the following features, albeit within constrained use cases as it is a prototype.
 First is the pipeline followed by the prototype:
 
 1. **Load Input**:
