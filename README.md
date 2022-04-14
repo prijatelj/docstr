@@ -25,20 +25,20 @@ Given properly written docstrings that would be used to create auto-docs through
     - **Tokenize**: The resulting tokens of parsing
         - [-TODO-] Syntax check the docstrings to ensure properly written
             - may be done live during the parsing process, or afterwards.
-        - {-TODO-} Optionally syntax check the docstrings to the objects to ensure they match expectations, e.g., the args in doc are as they are expected by a function.
+        - [-TODO-] Optionally syntax check the docstrings to the objects to ensure they match expectations, e.g., the args in doc are as they are expected by a function.
         - tokenized docstrings enable colorized docstrings in editors.
-        - The tokenized objects need to be in a useful enough and general enough format that enables ease of integration into down-stream "compile" software, such as (TODO) pydantic for type checking, or ConfigArgParse for CLI and config parsers (done).
-        - TODO Allow for "pre-parsed" docstrings in the case where a docstring is from a 3rd party and is not supported by existing docstr parsing standards.
+        - The tokenized objects need to be in a useful enough and general enough format that enables ease of integration into down-stream "compile" software, such as ([-TODO-]) pydantic for type checking, or ConfigArgParse for CLI and config parsers (done).
+        - [-TODO-] Allow for "pre-parsed" docstrings in the case where a docstring is from a 3rd party and is not supported by existing docstr parsing standards.
             In config files, this can be specified in its own section.
 3. "**Compile and Run**": Using the tokens, setup and perform operations
     - Command Line Interface: argparse auto creation
     - Configuration file parser: ConfigArgParse auto creation
         - Enables Pipeline running of code if docstr is used on a class that has a run() or main().
-            - TODO may hook into or rely upon: Dagster, ray, asyncio
-        - TODO Decorators may be applied to functions/classes in the config file
+            - [-TODO-] may hook into or rely upon: Dagster, ray, asyncio
+        - [-TODO-] Decorators may be applied to functions/classes in the config file
             - this may allow for applying Ray to functions/classes.
-        - TODO Allow for configuration files to link to other config files, if so desired.
-    - TODO Meta-programming (Reflection)
+        - [-TODO-] Allow for configuration files to link to other config files, if so desired.
+    - [-TODO-] Meta-programming (Reflection)
         - enabling type checking versions of the parsed code. (pydantic?)
         - splat extension for "write once".
             If docstr parsed, may automatically generate the boiler plate code based on the parsed docstring, thus reducing writing redundancy.
@@ -88,11 +88,11 @@ For all of these specific features, basic unit tests exist.
     - This is nearing extra, and programmers would still be able to write the main scripts or call these functions in their own existing programs.
     - End result would be: given a yaml config of a pipeline consisting of python objects in the active namespace who all have parsable docstrings, generate the pipeline running main script with its CLI/configuraiton parser.
 
-#### Desired TODO Features for Version 1
+#### Desired Features Under Development for Version 1.0.0
 
 The following are desired features for a complete docstr version 1.0.0, and add more detail to what is specified in the docstr pipeline section:
 
-TODO: organize based on docstr pipeline section.
+[-TODO-]: organize based on docstr pipeline section.
 
 - Auto-generation of CAP
     - doc linking, e.g., `see module.sub_module.class.method`
