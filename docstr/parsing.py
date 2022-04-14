@@ -404,7 +404,7 @@ class DocstringParser(object):
     def _get_object(self, namespace_obj, name, default=ValueExists.false):
         """Wraps get_object with a fallback to this parser's namespace"""
         try:
-            return get_object(namespace_obj, name, default)#, False
+            obj_instance = get_object(namespace_obj, name, default)
         except Exception as e:
             # TODO add the above exception to the stack trace of the following
             #.with_traceback(e)
@@ -413,7 +413,16 @@ class DocstringParser(object):
             # because you can check qual name of object once recieved to see if
             # it should be parsed based on whitelist or other conditions.
             if self.namespace is not None:
-                return get_namespace_obj(self.namespace, name, default)#, True
+                obj_instance = get_namespace_obj(self.namespace, name, default)
+
+        if obj_instance is None and name != 'None':
+            raise ValueError(' '.join([
+                'DocstringParser._get_object() got `None` as object instance',
+                "And name is not 'None'",
+                f'\nnamespace_obj = {namespace_obj}\n',
+                f'name = {name}',
+            ]))
+        return obj_instance
 
     def _parse_initial(self, docstring):
         """Internal util for pasring inital portion of docstring."""
@@ -692,9 +701,19 @@ class DocstringParser(object):
                 else:
                     found_types = found_types[0]
 
-                    if self.whitelist \
-                        and get_full_qual_name(found_types) in self.whitelist:
-                        recursive_parse[name] = found_types
+                    if self.whitelist:
+                        #if found_types is None:
+                        #    recursive_parse[name] = found_types
+                        #else:
+                        try:
+                            ft_qname = get_full_qual_name(found_types)
+                        except Exception as e:
+                            raise ValueError(' '.join([
+                                '`found_types` has unexpected value',
+                                f'`{found_types}` for attribute `{name}`',
+                            ])) from e
+                        if ft_qname in self.whitelist:
+                            recursive_parse[name] = found_types
 
                 # Update the params and types
                 if name in params:
@@ -1114,7 +1133,7 @@ class DocstringParser(object):
             raise TypeError(' '.join([
                 'Expected `obj` to be an object with `__doc__` and `__name__`',
                 'attributes, or a `str` with the `name` and `obj_type`',
-                'parameters given.',
+                f'parameters given. Recieved `obj` of type: `{type(obj)}`',
             ]))
 
         # TODO this is recursive, so will call everytime up the chain, probably
