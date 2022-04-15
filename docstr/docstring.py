@@ -237,10 +237,10 @@ class ClassDocstring(Docstring):
     """
     type : InitVar[object] = ValueExists.false
     attributes : OrderedDict({str : ArgDoc}) = None
-    init : InitVar[FuncDocstring] = None
+    init : FuncDocstring = None
     methods : {str: FuncDocstring} = None
 
-    def __post_init__(self, type, init):
+    def __post_init__(self, type):
         # TODO attributes are unnecessary for bare min config. uses init or
         # load-like function, but is useful for type checking.
 
@@ -250,13 +250,14 @@ class ClassDocstring(Docstring):
             )
         self.type = type
 
-        if init is None:
-            raise TypeError(' '.join([
-                'ClassDocstring() missing 1 required positional argument:',
-                '`init_docstring` Provide via keyword, if unable to through',
-                'position.',
-            ]))
-        self.init = init
+        # NOTE rm this check as NestedTuple classes have no init w/ own __doc__
+        #if init is None:
+        #    raise TypeError(' '.join([
+        #        'ClassDocstring() missing 1 required positional argument:',
+        #        '`init_docstring` Provide via keyword, if unable to through',
+        #        'position.',
+        #    ]))
+        #self.init = init
 
 
 # TODO consider making a namespace object that is the root of Docstr's parsed

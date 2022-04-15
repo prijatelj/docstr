@@ -224,7 +224,11 @@ def get_configargparser(
         description = docstring.description
             #f'{docstring.description}\n __init__: \n{docstring.init.description}'
         # TODO store the object in type to recreate the object post CAP parse
-        args = docstring.init.args
+        if docstring.init is None or docstring.init.args is None:
+            # This is a type of class w/o an init method, thus uses attributes.
+            args = docstring.attributes
+        else:
+            args = docstring.init.args
     elif isinstance(docstring, FuncDocstring):
         description = docstring.description
         # TODO store the object in type to recreate the object post CAP parse

@@ -3,8 +3,9 @@ import ast
 import builtins
 from collections import OrderedDict
 from copy import deepcopy
+from dataclasses import is_dataclass
 #from functools import wraps
-from inspect import getmodule
+from inspect import getmodule, isclass
 from importlib import import_module
 from keyword import iskeyword
 import logging
@@ -66,6 +67,30 @@ from docstr.docstring import (
 
 # TODO possible that getattr should be replaced with inspect.getattr_static in
 # some cases.
+
+
+def duck_test_isinstance_namedtuple(x):
+    """Duck test if the given object looks and acts like a namedtuple."""
+    return duck_test_issubclass_namedtuple(type(x))
+
+
+def duck_test_issubclass_namedtuple(type_x):
+    """Duck test if the given class / type object looks and acts like a
+    namedtuple.
+
+    Note
+    ----
+    Modified from https://stackoverflow.com/a/2166841/6557057
+    """
+    bases = type_x.__bases__
+    if len(bases) != 1 or bases[0] != tuple:
+        return False
+
+    fields = getattr(type_x, '_fields', None)
+    if not isinstance(fields, tuple):
+        return False
+
+    return all(isinstance(field, str) for field in fields)
 
 
 def get_namespace_obj(namespace, name, default=ValueExists.false):
@@ -1017,8 +1042,15 @@ class DocstringParser(object):
         init_qname = f'{qname}.__init__'
         if init_qname in self.parsed_tokens:
             init = self.parsed_tokens[init_qname]
+        elif duck_test_issubclass_namedtuple(obj):
+            # If a namedtuple duck type, then __init__ is none, and use attrs
+            init = None
         else:
-            init_obj = getattr(obj, '__init__')
+            if is_dataclass(obj) and isclass(obj):
+                # obj is a dataclass subclass, use docstring from __post_init__
+                init_obj = getattr(obj, '__post_init__')
+            else:
+                init_obj = getattr(obj, '__init__')
             if not init_obj.__doc__:
                 # TODO if __init__ does not have a docstring or no args but
                 # Attributes does and the attribute names match the init's arg
@@ -1031,14 +1063,17 @@ class DocstringParser(object):
                 # used to assign to the attribute without any change to its
                 # value (attrib = arg).
                 raise NotImplementedError(
-                    f'init w/o docstrings are not supported yet. {init_qname}',
+                    #logging.warning(
+                    'init w/o docstrings are not supported yet. %s',
+                    init_qname
                 )
-            init = self.parse_func(
-                init_obj,
-                recursion_limit=recursion_limit + 1,
-                parent=args,
-            )
-            self.parsed_tokens[init_qname] = init
+            else:
+                init = self.parse_func(
+                    init_obj,
+                    recursion_limit=recursion_limit + 1,
+                    parent=args,
+                )
+                self.parsed_tokens[init_qname] = init
 
         # Parse all given method docstrings
         if methods:

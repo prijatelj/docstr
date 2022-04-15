@@ -63,6 +63,7 @@ First is the pipeline followed by the prototype:
     - Uses sphinx auto doc parsing (relying on docutils too) with napoleaon extention to support Numpy and Google docstring styles.
     - Creates a tree of configurable objects that consists of python classes and functions. Only includes whitelisted objects to be parsed, which is currently inferred from the python namespace imports under the `docstr` section of the yaml config.
     Note that the namespace imports expect these objects to be accessible within the current python environment.
+    - supports subclasses of dataclass and NestedTuple, albeit without unit test coverage.
 3. **Compile: ConfigArgParse Generation**
     - Generates the ConfigArgParse (CAP) for CLI and configuration creation based on the given python program's yaml file.
     - This is then usable to configure and run the python program through the `docstr` CLI.
@@ -101,21 +102,30 @@ This adds more detail to what is specified in the docstr pipeline section, all o
             This is a speed-up option.
 1. **Load Input**:
 2. **Parse and Tokenize** [-TODO-]
-    - support of parsing the docstrings of dataclasses __post_init__.
+    - further support of parsing the docstrings of dataclasses __post_init__.
         This is crucial.
+        - unit tests are required
+    - Need to further test and support the use of the namespace of the module an object is within, including the aliases, so `import pandas as pd` to enable `pd.DataFrame` in that module's docs and same with `import torch; nn = torch.nn`.
     - Some cases where a docstring is either unnecessary or only partially required.
         - by default, complete docs are desired, but in the case where the docs are out of the user's control, support for handling partial docs to run the python program should be supported and be an option able to be specified by the user.
             - docstr configs specific to a set of modules/packages may be beneficial to support.
         - NestedTuple inherting classes don't need to have docstrings beyond adding descriptions to the arguments/attributes, as the rest of the format is exactly the same as if it were to be parsed.
+            - (done) NestTuple is explicitly supported through duck typing.
+            - Are there other such python classes/factories that have typing w/o abc?
     -  far more informative exception/error messages from docstr during the parsing process to inform the user exactly what file, line of code, object being parsed, and why it is an error, such as expectations of given context in parsing, and the unexpected thing found.
         - we want the error messages to be informative enough in themselves such that the user does not have to enter a debugger to observe such things a normal compiler, even JIT python, would inform the user of.
 3. **Compile and Run** [-TODO-]
     - Auto-generation of CAP
-        - [-TODO-] Allow CAP to be generated and informed more by the config
+        -  Support Iterable(type|MultiType), so that a type can be
+          written as `list(str|int)` for a list of strs or ints.
+            - This absolutely needs unit tested once implemented
+        - Traverse and build CAPs for the configurable objects w/in MultiTypes.
+        - Allow CAP to be generated and informed more by the config
           when a docstring specifies a parent class, and the config gives a
           child class that inherits from that parent and is still configurable.
           This is a common and important use case to support.
-        - [-TODO-] Option to ignore the docs (especially when there are none in
+            - This absolutely needs unit tested once implemented
+        -  Option to ignore the docs (especially when there are none in
           a 3rd party) and to instead be informed by the type hinting and
           defaults used in the python declaration of the function/method.
             - the point is to write once with docstrings, but if 3rd party's do
@@ -126,6 +136,7 @@ This adds more detail to what is specified in the docstr pipeline section, all o
               others or allow the user wrap such objects w/ their own written
               docstring, where the latter is a currently supported workaround
               at the expense of the user's time.
+            - This absolutely needs unit tested once implemented
         - doc linking, e.g., `see module.sub_module.class.method`
             - further doc linking support is necessary with more tests.
         - support of custom Sphinx napoleon
