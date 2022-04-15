@@ -173,8 +173,8 @@ def expected_class_recursive_parse():
         init=docstring.FuncDocstring(
             examples.NumpyDocClassRecursiveParse.__init__,
             """I have a description, unlike NumpyDocClass, but whatever really.
-I also support `see self` shorthand for all attributes are args, as
-expected of `see namespace.path.to.object`.""",
+I also support see self shorthand for all attributes are args, as
+expected of see namespace.path.to.object.""",
             args=args,
         ),
     )
