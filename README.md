@@ -90,35 +90,43 @@ For all of these specific features, basic unit tests exist.
 
 #### Desired Features Under Development for Version 1.0.0
 
-The following are desired features for a complete docstr version 1.0.0, and add more detail to what is specified in the docstr pipeline section:
+The following are more desired features for a complete docstr version 1.0.0.
+This adds more detail to what is specified in the docstr pipeline section, all of which is expected in version 1.0.0:
 
-[-TODO-]: organize based on docstr pipeline section.
-
-- Auto-generation of CAP
-    - doc linking, e.g., `see module.sub_module.class.method`
-        - further doc linking support is necessary with more tests.
-    - support of custom Sphinx napoleon
-        - support of custom docstring parsers through Sphinx extentions.
-    - This is the primary purpose of docstr
-- Decorator for specifying the args and kwargs of a function with format as:
-    `def func(*args, **kwargs):` to avoid redundant writing of args, defaults, etc.
-- Decorator for optional type-checking of variables values at runtime to the
-  docstring's preset values.
-    - Notably, "protected" attributes may be marked as such in the docs and so the user doesn't have to write @property variable name reutrn protected \_variable.
-- Comprehensive unit tests to ensure everything functions as expected.
-    - Along with basic CI/CD on github to check build status.
-- Extra features: features that are unnecessary, but beneficial
-    - Parameter iteration and searching (possibly using `pyrameter` or `SHADHO`) to run multiple versions of the same pipeline using different parameters, either
-        - This is specifically useful to Machine Learning (ML) researchers, but may be nice for those who either want to exhaustively run variations of their pipeline or have some objective function they want to optimize over different variations of their pipeline.
-        - in ML, the pipeline and its parameter search would be entirely contained all in one yaml file, or multiple through optoinal config linking.
-            This would result in a straightforward overview of the ML experiment pipeline, easily swapped with existing modules written in code as classes.
-    - Possibly rely upon Apache AirFlow DAG for the pipelining.
-        - `dag-factory` : AirFlow extension to make dynamic
-        - alternative to AirFlow is `dagster`
-    - Given an object whose doc string is fully parsed by docstr, output the template of the YAML config file to be editted.
+0. General: [-TODO-]
+    - Comprehensive unit tests to ensure everything functions as expected.
+        - Along with basic CI/CD on github to check build status.
     - Parallelization and Async support:
         -  Many processes in `docstr` could be parallelized and possibly benefit from async support.
             This is a speed-up option.
+1. **Load Input**:
+2. **Parse and Tokenize** [-TODO-]
+    - support of parsing the docstrings of dataclasses __post_init__.
+        This is crucial.
+    -  far more informative exception/error messages from docstr during the parsing process to inform the user exactly what file, line of code, object being parsed, and why it is an error, such as expectations of given context in parsing, and the unexpected thing found.
+        - we want the error messages to be informative enough in themselves such that the user does not have to enter a debugger to observe such things a normal compiler, even JIT python, would inform the user of.
+3. **Compile and Run** [-TODO-]
+    - Auto-generation of CAP
+        - doc linking, e.g., `see module.sub_module.class.method`
+            - further doc linking support is necessary with more tests.
+        - support of custom Sphinx napoleon
+            - support of custom docstring parsers through Sphinx extentions.
+        - This is the primary purpose of docstr
+        - Given an object whose doc string is fully parsed by docstr, output the template of the YAML config file to be editted.
+    - Code redundancy reduction using the docstrings:
+        - Decorator for specifying the args and kwargs of a function with format as:
+            `def func(*args, **kwargs):` to avoid redundant writing of args, defaults, etc.
+        - Notably, "protected" attributes may be marked as such in the docs and so the user doesn't have to write @property variable name reutrn protected \_variable.
+    - Type Checking based on Docstrings:
+        - Decorator for optional runtime type-checking of variables values at runtime to the docstring's preset values.
+    - [-TODO-] Extra features: features that are unnecessary, but beneficial
+        - Parameter iteration and searching (possibly using `pyrameter` or `SHADHO`) to run multiple versions of the same pipeline using different parameters, either
+            - This is specifically useful to Machine Learning (ML) researchers, but may be nice for those who either want to exhaustively run variations of their pipeline or have some objective function they want to optimize over different variations of their pipeline.
+            - in ML, the pipeline and its parameter search would be entirely contained all in one yaml file, or multiple through optoinal config linking.
+                This would result in a straightforward overview of the ML experiment pipeline, easily swapped with existing modules written in code as classes.
+        - Possibly rely upon Apache AirFlow DAG for the pipelining.
+            - `dag-factory` : AirFlow extension to make dynamic
+            - alternative to AirFlow is `dagster`
 
 ### Verisoning
 
