@@ -111,11 +111,25 @@ This adds more detail to what is specified in the docstr pipeline section, all o
         - we want the error messages to be informative enough in themselves such that the user does not have to enter a debugger to observe such things a normal compiler, even JIT python, would inform the user of.
 3. **Compile and Run** [-TODO-]
     - Auto-generation of CAP
+        - [-TODO-] Allow CAP to be generated and informed more by the config
+          when a docstring specifies a parent class, and the config gives a
+          child class that inherits from that parent and is still configurable.
+          This is a common and important use case to support.
+        - [-TODO-] Option to ignore the docs (especially when there are none in
+          a 3rd party) and to instead be informed by the type hinting and
+          defaults used in the python declaration of the function/method.
+            - the point is to write once with docstrings, but if 3rd party's do
+              not support complete docs because they rely on the python type
+              hinting, then we should support it to for completion. All that
+              really matters is it is written once somewhere, and when we don't
+              have control over the code, we either support common trends in
+              others or allow the user wrap such objects w/ their own written
+              docstring, where the latter is a currently supported workaround
+              at the expense of the user's time.
         - doc linking, e.g., `see module.sub_module.class.method`
             - further doc linking support is necessary with more tests.
         - support of custom Sphinx napoleon
             - support of custom docstring parsers through Sphinx extentions.
-        - This is the primary purpose of docstr
         - Given an object whose doc string is fully parsed by docstr, output the template of the YAML config file to be editted.
     - Code redundancy reduction using the docstrings:
         - Decorator for specifying the args and kwargs of a function with format as:
