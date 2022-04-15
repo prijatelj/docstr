@@ -93,7 +93,7 @@ For all of these specific features, basic unit tests exist.
 The following are more desired features for a complete docstr version 1.0.0.
 This adds more detail to what is specified in the docstr pipeline section, all of which is expected in version 1.0.0:
 
-0. General: [-TODO-]
+0. **General**: [-TODO-]
     - Comprehensive unit tests to ensure everything functions as expected.
         - Along with basic CI/CD on github to check build status.
     - Parallelization and Async support:
@@ -135,5 +135,4 @@ Docstr's version will remain < 1.0.0 until adequate unit test coverage exists.
 
 ### License
 
-The docstr project is licensed under the MIT license by its author Derek S. Prijatelj.
-The license is provided in LICENSE.txt
+The docstr project is licensed under the MIT license, which is provided in LICENSE.txt
