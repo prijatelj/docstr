@@ -103,6 +103,10 @@ This adds more detail to what is specified in the docstr pipeline section, all o
 2. **Parse and Tokenize** [-TODO-]
     - support of parsing the docstrings of dataclasses __post_init__.
         This is crucial.
+    - Some cases where a docstring is either unnecessary or only partially required.
+        - by default, complete docs are desired, but in the case where the docs are out of the user's control, support for handling partial docs to run the python program should be supported and be an option able to be specified by the user.
+            - docstr configs specific to a set of modules/packages may be beneficial to support.
+        - NestedTuple inherting classes don't need to have docstrings beyond adding descriptions to the arguments/attributes, as the rest of the format is exactly the same as if it were to be parsed.
     -  far more informative exception/error messages from docstr during the parsing process to inform the user exactly what file, line of code, object being parsed, and why it is an error, such as expectations of given context in parsing, and the unexpected thing found.
         - we want the error messages to be informative enough in themselves such that the user does not have to enter a debugger to observe such things a normal compiler, even JIT python, would inform the user of.
 3. **Compile and Run** [-TODO-]
