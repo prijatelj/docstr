@@ -1,4 +1,8 @@
 """ConfigArgParse specific extentions or utils for docstr."""
+from collections import OrderedDict
+from functools import partial
+import yaml
+
 import configargparse as cap
 
 from docstr.docstring import (
@@ -190,6 +194,77 @@ class NestedNamespace(cap.Namespace):
 
 # TODO Perhaps, find/make a nice formatter_class for customized help output?
 
+def default_mapping_constructor(
+    loader: yaml.SafeLoader,
+    node: yaml.nodes.MappingNode,
+    default_map: dict
+) -> dict:
+    return default_map.update(loader.construct_mapping(node))
+
+
+def add_default_mappings(loader, configs):
+    for key, value in configs.items():
+        loader.add_constructor(
+            f'!docstr.configs:{key}',
+            partial(default_mapping_constructor, default_map=value),
+        )
+    return loader
+
+
+class YAMLConfigFileParserCustomLoader(cap.YAMLConfigFileParser):
+    """YAMLConfigFileParser with a given PyYAML loader.
+    Same as YAMLConfigFileParser excepts adds an attribute: loader for a PyYAML
+    custom loader to support things like adding constructors to handle custom
+    tags, and then uses that loader in parsing.
+
+    Attributes
+    ----------
+    see YAMLConfigFileParser
+    loader : yaml.SafeLoader
+
+    """
+    def __init__(self, loader=None, *args, **kwargs):
+        super().__init__(*args, **kwargs)
+        if loader is None or issubclass(
+            loader,
+            (yaml.SafeLoader, yaml.CSafeLoader),
+        ):
+            self.loader = loader
+        else:
+            raise TypeError(' '.join([
+                '`loader` must be a yaml.SafeLoader or yaml.CSafeLoader, for',
+                f'safety reasons. Not {type(loader)}',
+            ]))
+
+    def parse(self, stream):
+        # see ConfigFileParser.parse docstring
+        yaml = self._load_yaml()
+
+        try:
+            parsed_obj = yaml.load(stream, Loader=self.loader)
+        except Exception as e:
+            raise cap.ConfigFileParserException(
+                "Couldn't parse config file: %s" % e
+            )
+
+        if not isinstance(parsed_obj, dict):
+            raise cap.ConfigFileParserException(
+                "The config file doesn't appear to "
+                "contain 'key: value' pairs (aka. a YAML mapping). "
+                "yaml.load('%s') returned type '%s' instead of 'dict'." % (
+                getattr(stream, 'name', 'stream'),  type(parsed_obj).__name__))
+
+        result = OrderedDict()
+        for key, value in parsed_obj.items():
+            if isinstance(value, list):
+                result[key] = value
+            elif value is None:
+                pass
+            else:
+                result[key] = str(value)
+
+        return result
+
 
 def get_configargparser(
     docstring,
@@ -247,11 +322,11 @@ def get_configargparser(
             config_file_parser = cap.YAMLConfigFileParser
         elif config_file_parser == 'ini':
             config_file_parser = cap.ConfigparserConfigFileParser
-        else:
+        elif not isinstance(config_file_parser, partial):
             raise ValueError(
                 f'Unexpected `config_file` value: {config_file_parser}'
             )
-        nested_parser = cap.ArgParser(
+        nested_parser = cap.ArgumentParser(
             prog=docstring.name,
             description=description,
             config_file_parser_class=config_file_parser,

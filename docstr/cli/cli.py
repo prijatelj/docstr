@@ -1,5 +1,6 @@
 """The base docstr command line interface through ConfigArgParse."""
 import os
+from functools import partial
 from importlib import import_module
 from operator import attrgetter
 import yaml
@@ -9,6 +10,8 @@ import configargparse as cap
 from docstr import parse_config #, parse
 from docstr.configargparse import (
     NestedNamespace,
+    YAMLConfigFileParserCustomLoader,
+    add_default_mappings,
     get_configargparser,
     init_prog,
 )
@@ -154,7 +157,9 @@ def compile_cap(subparsers):
 
 def prototype_hack_reformat_yaml_dict_unnested_cap(config_path):
     with open(config_path, 'r') as openf:
-        config = yaml.safe_load(openf)
+        loader = yaml.SafeLoader
+        loader.add_constructor(None, lambda x, y: None)
+        config = yaml.load(openf, Loader=loader)
 
     # TODO parse docstr config & namespace things from docstr part of yaml
     docstr_parsed = {}
@@ -165,6 +170,7 @@ def prototype_hack_reformat_yaml_dict_unnested_cap(config_path):
     cap_namespace.docstr = NestedNamespace()
     cap_namespace.docstr.style = docstr_config.pop('style', 'numpy')
     cap_namespace.docstr.main = docstr_config.pop('main', None)
+    cap_namespace.docstr.configs = docstr_config.pop('configs', None)
 
     if len(docstr_config) > 1:
         raise ValueError(
@@ -282,8 +288,19 @@ def docstr_cap(config=None, known_args=True):
         getattr(cap_namespace, cap_namespace.docstr.prog_name),
     )
 
+    # Create docstr yaml SafeLoader with yaml tags for mapping defaults.
+    if cap_namespace.docstr.configs:
+        loader = add_default_mappings(
+            yaml.SafeLoader,
+            cap_namespace.docstr.configs,
+        )
+        loader = partial(YAMLConfigFileParserCustomLoader, loader=loader)
+    else:
+        loader = 'yaml'
+
+
     # TODO parsing of docstrings finished, get the CAP form those tokens
-    prog_cap = get_configargparser(tokens)
+    prog_cap = get_configargparser(tokens, config_file_parser=loader)
 
     # TODO run the program with the parsed tokens and aligned CAP values
     #getattr(**prog_cap.parse_args(args.prog_args), docstr_args.main)()
