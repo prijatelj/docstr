@@ -1203,8 +1203,6 @@ class DocstringParser(object):
         self.parsed_tokens[parsed_token.full_qual_name] = parsed_token
         return parsed_token
 
-        # TODO parse_config
-
 
 def parse_config(docstr_args, prog_args):
     """Handles the config parsing before passing to docstr.parse()"""
