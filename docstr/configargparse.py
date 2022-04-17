@@ -199,7 +199,9 @@ def default_mapping_constructor(
     node: yaml.nodes.MappingNode,
     default_map: dict
 ) -> dict:
-    return default_map.update(loader.construct_mapping(node))
+    def_map = default_map.copy()
+    def_map.update(loader.construct_mapping(node))
+    return def_map
 
 
 def add_default_mappings(loader, configs):
