@@ -194,14 +194,65 @@ class NestedNamespace(cap.Namespace):
 
 # TODO Perhaps, find/make a nice formatter_class for customized help output?
 
+
+def recursive_dict_update(dest, src, copy=True):
+    """Updates all dictionaries within a dictionary given a dict or dicts.
+
+    Args
+    ----
+    dest : dict
+        The dictionary to be updated.
+    src : dict
+        The dictionary used to update the source dictionary.
+
+    Returns
+    -------
+    dict
+        The resulting destination dictionary updated by the source dictionary.
+
+    Note
+    ----
+    If an element is a list of dictionaries, a TODO is to support extending the
+    existing list if in dest XOR updating the list's values that are dicts
+    based on position. In this function, neither of those are performed. Here
+    the update only looks for dicts to update, and thus will override keys
+    whose values are lists.
+    """
+    if copy:
+        dest = dest.copy()
+        src = src.copy()
+
+    # Key: value pairs only in src, then add those w/ values to update
+    update = {key: src[key] for key in src.keys() - dest.keys()}
+    same_keys_dict_val = set()
+    # TODO could get key sets in one pass.
+    for key in dest.keys() & src.keys():
+        if isinstance(src[key], dict) and isinstance(dest[key], dict):
+            same_keys_dict_val.add(key)
+        else:
+            update[key] = src[key]
+
+    dest.update(update)
+
+    for key in same_keys_dict_val:
+        if copy:
+            dest[key] = recursive_dict_update(dest[key], src[key], True)
+        else:
+            recursive_dict_update(dest[key], src[key], False)
+    if copy:
+        return dest
+
+
 def default_mapping_constructor(
     loader: yaml.SafeLoader,
     node: yaml.nodes.MappingNode,
     default_map: dict
 ) -> dict:
-    def_map = default_map.copy()
-    def_map.update(loader.construct_mapping(node))
-    return def_map
+    return recursive_dict_update(
+        default_map,
+        loader.construct_mapping(node),
+        copy=True,
+    )
 
 
 def add_default_mappings(loader, configs):
