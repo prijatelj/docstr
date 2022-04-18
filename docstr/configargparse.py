@@ -196,14 +196,14 @@ class NestedNamespace(cap.Namespace):
 
 
 def recursive_dict_update(dest, src, copy=True):
-    """Updates all dictionaries within a dictionary given a dict or dicts.
+    """Updates all dictionaries within a dictionary given a dict of dicts.
 
     Args
     ----
     dest : dict
         The dictionary to be updated.
     src : dict
-        The dictionary used to update the source dictionary.
+        The dictionary used to update the destination dictionary.
 
     Returns
     -------
@@ -212,11 +212,11 @@ def recursive_dict_update(dest, src, copy=True):
 
     Note
     ----
-    If an element is a list of dictionaries, a TODO is to support extending the
-    existing list if in dest XOR updating the list's values that are dicts
-    based on position. In this function, neither of those are performed. Here
-    the update only looks for dicts to update, and thus will override keys
-    whose values are lists.
+    If an element is a list of dictionaries, a TODO for another function is to
+    support extending the existing list if in dest XOR updating the list's
+    values that are dicts based on position. In this function, neither of those
+    are performed. Here the update only looks for dicts to update, and thus
+    will override keys whose values are lists.
     """
     if copy:
         dest = dest.copy()
@@ -239,6 +239,7 @@ def recursive_dict_update(dest, src, copy=True):
             dest[key] = recursive_dict_update(dest[key], src[key], True)
         else:
             recursive_dict_update(dest[key], src[key], False)
+
     if copy:
         return dest
 
@@ -250,7 +251,7 @@ def default_mapping_constructor(
 ) -> dict:
     return recursive_dict_update(
         default_map,
-        loader.construct_mapping(node),
+        loader.construct_mapping(node, True),
         copy=True,
     )
 
