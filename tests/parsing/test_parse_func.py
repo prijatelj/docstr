@@ -238,13 +238,14 @@ class TestParseFuncRecursiveParsing:
 
 
 @pytest.mark.dependency(depends=['parse_defaults_choices'])
-@pytest.mark.xfail
 class TestParseFuncDocLinkingSee:
     """Doc linking through the use of shortcut linking by `see`"""
+    @pytest.mark.xfail
     def test_docstr_parse_func_linking(self, expected_func_linking):
         parsed = parse(examples.func_linking, 'numpy')
         assert expected_func_linking == parsed
 
+    @pytest.mark.xfail
     def test_docstr_parse_func_linking_arg_pass_thru(
         self,
         expected_func_linking_arg_pass_thru,
@@ -252,6 +253,7 @@ class TestParseFuncDocLinkingSee:
         parsed = parse(examples.func_linking_arg_pass_thru, 'numpy')
         assert expected_func_linking_arg_pass_thru == parsed
 
+    @pytest.mark.xfail
     def test_docstr_parse_func_linking_args(self, expected_func_linking_args):
         parsed = parse(examples.func_linking_args, 'numpy')
         assert expected_func_linking_args == parsed
