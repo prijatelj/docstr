@@ -874,8 +874,15 @@ class DocstringParser(object):
                 linked_obj_set.add(linked_obj)
 
                 ordered_params.append(parsed_args)
+
+            # Ensure all added args are within type for future type checking.
             for key in growing_arg_set - types.keys():
                 types[key] = ValueExists.true
+
+        # If any params follow last see, append them to ordered_params
+        if params:
+            ordered_params.append(params)
+
         # Reconstruct ordered params from the multiple param ordered dicts
         if ordered_params:
             new_params = OrderedDict()
