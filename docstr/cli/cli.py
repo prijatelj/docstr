@@ -265,10 +265,10 @@ def prototype_hack_reformat_yaml_dict_unnested_cap(config_path):
                 item_stack.append(next_item[1])
             else:
                 # the non-leaf is empty, time to pop
-                print('')
-                print(stack_prefix)
-                for item_ya in item_stack:
-                    print(item_ya)
+                #print('')
+                #print(stack_prefix)
+                #for item_ya in item_stack:
+                #    print(item_ya)
                 item_stack.pop()
                 if hierarchical_config.pop():
                     stack_prefix = stack_prefix.rpartition('.')[0]
