@@ -155,10 +155,28 @@ def compile_cap(subparsers):
     raise NotImplementedError()
 
 
+def unknown_tag(loader, suffix, node):
+    if isinstance(node, yaml.ScalarNode):
+        constructor = loader.__class__.construct_scalar
+    elif isinstance(node, yaml.SequenceNode):
+        constructor = loader.__class__.construct_sequence
+    elif isinstance(node, yaml.MappingNode):
+        constructor = loader.__class__.construct_mapping
+
+    data = constructor(loader, node)
+
+    return data
+
+
 def prototype_hack_reformat_yaml_dict_unnested_cap(config_path):
     with open(config_path, 'r') as openf:
         loader = yaml.SafeLoader
-        loader.add_constructor(None, lambda x, y: None)
+        #loader.add_constructor(None, lambda x, y: x.construct_mapping(y, True))
+        loader.add_multi_constructor('!', unknown_tag)
+        #loader.add_multi_constructor(
+        #    '',
+        #    lambda loader, tag_suffix, node: tag_suffix + ' ' + node.value,
+        #)
         config = yaml.load(openf, Loader=loader)
 
     # TODO parse docstr config & namespace things from docstr part of yaml
@@ -218,6 +236,19 @@ def prototype_hack_reformat_yaml_dict_unnested_cap(config_path):
     cap_namespace.docstr.prog_name = first_item[0]
     setattr(cap_namespace, first_item[0], NestedNamespace())
 
+    # TODO these is some silent and not always occurring bug where 2
+    # rpartitions of the stack_prefix occurs.
+    #   Seems to be when removing keys that are named values in namespace, it
+    #   does not go through all their values as part of that object if there
+    #   were others to go through.
+    # We could know when NOT to decrement stack_prefix, and that is if the
+    # current empty dict is for a dict with only one key to a configurable
+    # object,
+    # TODO the unit tests need to include this kind of hierarchical test cases
+
+    # This is a hot fix to store if it is a configurable object or a named arg.
+    hierarchical_config = [True]
+
     while item_stack:
         if isinstance(item_stack[-1], dict):
             if item_stack[-1]:
@@ -228,14 +259,23 @@ def prototype_hack_reformat_yaml_dict_unnested_cap(config_path):
                         stack_prefix += f'.{next_item[0]}'
                     else:
                         stack_prefix = next_item[0]
+                    hierarchical_config.append(True)
+                else:
+                    hierarchical_config.append(False)
                 item_stack.append(next_item[1])
             else:
                 # the non-leaf is empty, time to pop
+                print('')
+                print(stack_prefix)
+                for item_ya in item_stack:
+                    print(item_ya)
                 item_stack.pop()
-                stack_prefix = stack_prefix.rpartition('.')[0]
+                if hierarchical_config.pop():
+                    stack_prefix = stack_prefix.rpartition('.')[0]
         else: # item is a leaf
             config_reformatted[stack_prefix] = item_stack.pop()
-            stack_prefix = stack_prefix.rpartition('.')[0]
+            if hierarchical_config.pop():
+                stack_prefix = stack_prefix.rpartition('.')[0]
 
     cap_namespace.docstr.namespace = namespace
     cap_namespace.docstr.entry_obj = namespace[entry_obj]
