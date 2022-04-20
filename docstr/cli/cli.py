@@ -287,7 +287,7 @@ def prototype_hack_reformat_yaml_dict_unnested_cap(config_path):
     return cap_namespace
 
 
-def docstr_cap(config=None, known_args=True):
+def docstr_cap(config=None, known_args=True, return_prog=False):
     """The docstr main ConfigArgParser."""
     if config is None:
         from sys import argv as sys_argv
@@ -361,7 +361,11 @@ def docstr_cap(config=None, known_args=True):
         )
     #setattr(cap_namespace, cap_namespace.docstr.prog_name, args)
 
+
     prog_ready = init_prog(args)
+
+    if return_prog:
+        return prog_ready
 
     # Based on cap_namespace.docstr main and entry_obj, run the init prog.
     if cap_namespace.docstr.main == cap_namespace.docstr.entry_obj.__name__:
@@ -373,4 +377,4 @@ def docstr_cap(config=None, known_args=True):
 
 
 if __name__ == '__main__':
-    docstr_cap()
+    results = docstr_cap()
