@@ -5,6 +5,7 @@ From these tokens, syntax checking as well as "compile" actions may occur.
 from enum import Flag, unique
 from collections import OrderedDict
 from dataclasses import dataclass, InitVar
+import inspect
 from keyword import iskeyword
 import logging
 from types import FunctionType
@@ -204,9 +205,9 @@ class FuncDocstring(Docstring):
     returns : BaseDoc = ValueExists.false
 
     def __post_init__(self, type):
-        if not isinstance(type, FunctionType):
+        if not inspect.isroutine(type):
             raise TypeError(
-                f"FuncDocstring given a type that's not FunctionType: {type}"
+                f"FuncDocstring given a type that's not a routine: {type}"
             )
         self.type = type
 
