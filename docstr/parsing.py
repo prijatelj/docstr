@@ -1114,6 +1114,14 @@ class DocstringParser(object):
             methods=method_docstrs,
         )
 
+        if init is None:
+            parsed_class.init = FuncDocstring(
+                obj.__init__,
+                description,
+                args=args,
+                returns=ValueExists.false,
+            )
+
         return parsed_class
 
     def parse(
