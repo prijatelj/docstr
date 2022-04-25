@@ -1,5 +1,5 @@
 from importlib import import_module
-__version__='0.0.2rc1'
+__version__='0.0.2rc2'
 
 __all__ = [
     'cli',

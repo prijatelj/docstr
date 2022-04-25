@@ -23,7 +23,8 @@ setup(
     version=get_property('__version__', project_name),
     author='Derek S. Prijatelj',
     author_email='dprijate@nd.edu',
-    packages=[f'{project_name}.{pkg}' for pkg in find_packages(project_name)],
+    packages=[project_name] \
+        + [f'{project_name}.{pkg}' for pkg in find_packages(project_name)],
     description=' '.join([
         'Docstring parsing for generating argument and config parsers and',
         'expediting the common coding processes.',
