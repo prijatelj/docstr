@@ -2,6 +2,10 @@
 
 Given properly written docstrings that would be used to create auto-docs through Sphinx, `docstr` can use those docstrings at runtime to expedite certain programming practices, such as the creation of argument and config parsers, the modular configuration of piplines of both OOP and funcitonal python components, and reduce code duplication.
 
+|:warning: WARNING|
+|:----------------|
+| Any project that is dependent upon the resulting parsed tokens from docstr's parsing of some code's `__doc__`s will thus be dependent on the content within the comments of that parsed code! |
+
 ### Design Principles
 
 1. Write once
