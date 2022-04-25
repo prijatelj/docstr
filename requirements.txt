@@ -2,7 +2,9 @@
 #python>=3.8
 
 # Uses sphinx for napoleon docstring conversion
-sphinx
+PyYAML
+docutils
+Sphinx
 
 # Extends ConfigArgParse for config parsing support
 ConfigArgParse
