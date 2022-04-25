@@ -2,9 +2,9 @@
 
 Given properly written docstrings that would be used to create auto-docs through Sphinx, `docstr` can use those docstrings at runtime to expedite certain programming practices, such as the creation of argument and config parsers, the modular configuration of piplines of both OOP and funcitonal python components, and reduce code duplication.
 
-|:warning: WARNING|
+| :warning: WARNING! |
 |:----------------|
-| Any project that is dependent upon the resulting parsed tokens from docstr's parsing of some code's `__doc__`s will thus be dependent on the content within the comments of that parsed code! |
+| Any project that is dependent upon the resulting parsed tokens from docstr's parsing of some python object's `__doc__`s will be dependent on the content within the comments of that parsed code! The same applies to any python program that is parsed using the `docstr` CLI. This is by design, as the point is to use the doc strings to write once and reduce redundancy. Future versions may allow work arounds in certain conditions. Future versions will implement more concise and complete error messages similar to that of a compiler for debugging purposes. Support for a 3rd party linter (pylint) will be explored. |
 
 ### Design Principles
 
