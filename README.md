@@ -162,7 +162,7 @@ This adds more detail to what is specified in the docstr pipeline section, all o
             - `dag-factory` : AirFlow extension to make dynamic
             - alternative to AirFlow is `dagster`
 
-### Verisoning
+### Versioning
 
 Docstr uses [Semantic Versioning 2.0.0](https://semver.org/spec/v2.0.0.html).
 Docstr's version will remain < 1.0.0 until adequate unit test coverage exists.
