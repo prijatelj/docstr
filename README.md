@@ -49,14 +49,15 @@ Given properly written docstrings that would be used to create auto-docs through
                 - May require linters (pylint, flake8) to acknowledge this.
         - docstr.meta.dataclass : make any class a dataclass given correct docstring
 
-#### Prototype
+### Prototype
 
 The prototype provides the following features, albeit within constrained use cases as it is a prototype.
 First is the pipeline followed by the prototype:
 
 1. **Load Input**:
     - When `docstr` is installed, a console script is included.
-        Exectuting `docstr path/to/a_python_program_config.yaml [arguments for the python program]`
+        Exectuting :
+        ```docstr path/to/a_python_program_config.yaml [arguments for the python program]```
         will run the python program based on docstr's parsing of the docstrings and configuration file.
         The prototype will read in the config, adjust docstr's parser settings to that under the `docstr:` options sections.
         Parse the docstrings starting with entry object (the first python object in configuration).
@@ -75,7 +76,7 @@ First is the pipeline followed by the prototype:
         - initialize the objects from the generated CAP starting from leaves going up to the root of the python program based on the given configuraiton yaml file.
         - Once initialized, the python program will run using the entry object and the given `main` string indicator of what function/method is the main method.
 
-##### Included Specific Features
+#### Included Specific Features
 
 These are the specific features already included by the prototype, albeit in a limited form.
 For all of these specific features, basic unit tests exist.
@@ -93,7 +94,7 @@ For all of these specific features, basic unit tests exist.
     - This is nearing extra, and programmers would still be able to write the main scripts or call these functions in their own existing programs.
     - End result would be: given a yaml config of a pipeline consisting of python objects in the active namespace who all have parsable docstrings, generate the pipeline running main script with its CLI/configuraiton parser.
 
-#### Desired Features Under Development for Version 1.0.0
+### Desired Features Under Development for Version 1.0.0
 
 The following are more desired features for a complete docstr version 1.0.0.
 This adds more detail to what is specified in the docstr pipeline section, all of which is expected in version 1.0.0:
