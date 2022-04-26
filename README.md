@@ -17,6 +17,9 @@ This installs the cli tool `docstr`, allowing you to run a python program yaml c
 docstr path/to/a_python_program_config.yaml [arguments for the python program]
 ```
 
+For examples, please see the `tests/` directory.
+There are small Numpy docstring examples of the code with docstrings and the config.yaml.
+
 ### Design Principles
 
 1. Write once
