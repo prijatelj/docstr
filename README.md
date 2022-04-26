@@ -123,16 +123,23 @@ This adds more detail to what is specified in the docstr pipeline section, all o
 2. **Parse and Tokenize** [-TODO-]
     - further support of parsing the docstrings of dataclasses __post_init__.
         This is crucial.
-        - unit tests are required
+        - Working in external research code, but unit tests are required here.
     - Need to further test and support the use of the namespace of the module an object is within, including the aliases, so `import pandas as pd` to enable `pd.DataFrame` in that module's docs and same with `import torch; nn = torch.nn`.
     - Some cases where a docstring is either unnecessary or only partially required.
         - by default, complete docs are desired, but in the case where the docs are out of the user's control, support for handling partial docs to run the python program should be supported and be an option able to be specified by the user.
             - docstr configs specific to a set of modules/packages may be beneficial to support.
         - NestedTuple inherting classes don't need to have docstrings beyond adding descriptions to the arguments/attributes, as the rest of the format is exactly the same as if it were to be parsed.
-            - (done) NestTuple is explicitly supported through duck typing.
+            - (done) NestTuple is explicitly supported through duck typing. Needs unit testing.
             - Are there other such python classes/factories that have typing w/o abc?
-    -  far more informative exception/error messages from docstr during the parsing process to inform the user exactly what file, line of code, object being parsed, and why it is an error, such as expectations of given context in parsing, and the unexpected thing found.
+    - far more informative exception/error messages from docstr during the parsing process to inform the user exactly what file, line of code, object being parsed, and why it is an error, such as expectations of given context in parsing, and the unexpected thing found.
         - we want the error messages to be informative enough in themselves such that the user does not have to enter a debugger to observe such things a normal compiler, even JIT python, would inform the user of.
+    - Need to support in some standard way how to specify that the object
+      expected is a specific set of types, as in callable classes, rather than
+      instances of those classes.
+        - Perhaps Python type hinting has something?
+        - for now, `type` as expected parent type of such objects works.
+        - perhaps something similar to MultiType but for the class themselves.
+            - MultiClass? perhaps not... naming is off.
 3. **Compile and Run** [-TODO-]
     - Auto-generation of CAP
         -  Support Iterable(type|MultiType), so that a type can be
