@@ -6,6 +6,17 @@ Given properly written docstrings that would be used to create auto-docs through
 |:----------------|
 | Any project that is dependent upon the resulting parsed tokens from docstr's parsing of some python object's `__doc__`s will be dependent on the content within the comments of that parsed code! The same applies to any python program that is parsed using the `docstr` CLI. This is by design, as the point is to use the doc strings to write once and reduce redundancy. Future versions may allow work arounds in certain conditions. Future versions will implement more concise and complete error messages similar to that of a compiler for debugging purposes. Support for a 3rd party linter (pylint) will be explored. |
 
+Install docstr from PyPi:
+
+```
+pip install docstr
+```
+
+This installs the cli tool `docstr`, allowing you to run a python program yaml config with the following line:
+```
+docstr path/to/a_python_program_config.yaml [arguments for the python program]
+```
+
 ### Design Principles
 
 1. Write once
