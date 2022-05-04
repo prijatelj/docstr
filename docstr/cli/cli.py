@@ -236,7 +236,7 @@ def prototype_hack_reformat_yaml_dict_unnested_cap(config_path):
     cap_namespace.docstr.prog_name = first_item[0]
     setattr(cap_namespace, first_item[0], NestedNamespace())
 
-    # TODO these is some silent and not always occurring bug where 2
+    # TODO There is some silent and not always occurring bug where 2
     # rpartitions of the stack_prefix occurs.
     #   Seems to be when removing keys that are named values in namespace, it
     #   does not go through all their values as part of that object if there
@@ -287,11 +287,16 @@ def prototype_hack_reformat_yaml_dict_unnested_cap(config_path):
     return cap_namespace
 
 
-def docstr_cap(config=None, known_args=True, return_prog=False):
+def docstr_cap(config=None, known_args=False, return_prog=False):
     """The docstr main ConfigArgParser."""
     if config is None:
         from sys import argv as sys_argv
         config = sys_argv[1]
+
+        if len(sys_argv) > 2 :
+            prog_args = sys_argv[2:]
+    else:
+        prog_args = None
 
     # NOTE Does note need to be a sys_argv, can be a str positional in CAP.
     ext = os.path.splitext(config)[-1]
@@ -347,6 +352,7 @@ def docstr_cap(config=None, known_args=True, return_prog=False):
 
     if known_args:
         args = prog_cap.parse_known_args(
+            args=prog_args,
             namespace=NestedNamespace(),
             config_file_contents=yaml.dump(
                 getattr(cap_namespace, cap_namespace.docstr.prog_name).args
@@ -354,13 +360,13 @@ def docstr_cap(config=None, known_args=True, return_prog=False):
         )[0]
     else:
         args = prog_cap.parse_args(
+            args=prog_args,
             namespace=NestedNamespace(),
             config_file_contents=yaml.dump(
                 getattr(cap_namespace, cap_namespace.docstr.prog_name).args
             ),
         )
     #setattr(cap_namespace, cap_namespace.docstr.prog_name, args)
-
 
     prog_ready = init_prog(args)
 
