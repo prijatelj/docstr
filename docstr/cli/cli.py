@@ -295,6 +295,8 @@ def docstr_cap(config=None, known_args=False, return_prog=False):
 
         if len(sys_argv) > 2 :
             prog_args = sys_argv[2:]
+        else:
+            prog_args = []
     else:
         prog_args = None
 
