@@ -7,7 +7,7 @@ from configargparse import (
     YAMLConfigFileParser,
 )
 
-from docstr.configargparse import NestedNamespace #ArgumentParser
+from docstr.configargparse import NestedNamespace, cast_bool_str #ArgumentParser
 from docstr.docstring import MultiType
 from docstr.parsing import get_module_object
 
@@ -104,6 +104,15 @@ def make_cli():
         type=float,
         default=3.14159,
         help='An example of an attribute with a default value, typically set in init.',
+    )
+
+    sub_cli.add_argument(
+        '--very_useful_class.ok',
+        type=cast_bool_str,
+        default=False,
+        help="""A bool attribute test for configargparse. There were issues before in
+the prototype where any non-empty str input including "False" and
+"True" were cast to True, whether in config or cli args.""",
     )
 
     # TODO add the sub/hierarchical ConfigArgParser as an argument

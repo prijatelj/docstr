@@ -42,6 +42,14 @@ def expected_class_of_primitives():
         'An example of an attribute with a default value, typically set in init.',
         3.14159,
     )
+    ok_doc = docstring.ArgDoc(
+        'ok',
+        bool,
+        """A bool attribute test for configargparse. There were issues before in
+the prototype where any non-empty str input including "False" and
+"True" were cast to True, whether in config or cli args.""",
+        False,
+    )
     # NOTE That here, int_float is shorthand, and the objects won't be the same
     # in the actual parsed docstring.
     int_float = docstring.MultiType({int, float})
@@ -79,6 +87,7 @@ includes the allowance of two types of int and float.""",
                 0,
             ),
             z=z_doc,
+            ok=ok_doc,
         ),
         init=docstring.FuncDocstring(
             examples.NumpyDocClass.__init__,
@@ -112,6 +121,7 @@ niche user cases may be handled by the user.""",
                     11,
                 ),
                 z=z_doc,
+                ok=ok_doc,
             ),
         ),
         # TODO default ignore?, ignore properties, allow skip_missing_doc

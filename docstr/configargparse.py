@@ -319,6 +319,25 @@ class YAMLConfigFileParserCustomLoader(cap.YAMLConfigFileParser):
 
         return result
 
+def cast_bool_str(obj):
+    if isinstance(obj, bool):
+        return obj
+    if isinstance(obj, str):
+        if obj == 'True':
+            return True
+        if obj == 'False':
+            return False
+        else:
+            raise ValueError(
+                "Docstr ConfigArgParse given str expects values 'True' xor "
+                f"'False', but was given: `{obj}`"
+            )
+    raise ValueError(
+        'Docstr ConfigArgParse expected arg to be of type bool or str, where '
+        "when a str the values of 'True' xor 'False' are expected, but was "
+        f'given type: `{type(obj)}`'
+    )
+
 
 def get_configargparser(
     docstring,
@@ -451,6 +470,10 @@ def get_configargparser(
             all_literals = all([not isinstance(t, type) for t in arg.type])
             if all_literals:
                 arg_kwargs['choices'] = arg.type
+
+        # Handle boolean args' casting as they are a special case.
+        if arg.type is bool:
+            arg.type = cast_bool_str
 
         nested_parser.add_argument(
             f'--{name}',

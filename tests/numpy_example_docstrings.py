@@ -283,8 +283,12 @@ class NumpyDocClass(object):
         Number set upon initialization that increments as foo is used.
     z : float = 3.14159
         An example of an attribute with a default value, typically set in init.
+    ok : bool = False
+        A bool attribute test for configargparse. There were issues before in
+        the prototype where any non-empty str input including "False" and
+        "True" were cast to True, whether in config or cli args.
     """
-    def __init__(self, name, a, b, x=8, y=11, z=3.14159):
+    def __init__(self, name, a, b, x=8, y=11, z=3.14159, ok=False):
         """
         Args
         ----
@@ -303,6 +307,7 @@ class NumpyDocClass(object):
             modifcation to their parsing regexes such that custom support for
             niche user cases may be handled by the user.
         z : see self
+        ok : see self
         """
         self.name = name
         self.a_plus_b = a + b
@@ -310,6 +315,8 @@ class NumpyDocClass(object):
         self.z = float(z)
 
         self.c = 0
+
+        self.ok = ok
 
     def foo(self, oh, my):
         """The foo function performs Tom foo-ery. Heh heh.
@@ -362,6 +369,8 @@ class NumpyDocClassRecursiveParse(object):
             self.func_2 = func_2
 
     def run(self, *args, **kwargs):
+        #fine = {k: vars(v) for k, v in vars(self).items()}
+        #return self.func_2(*args, **kwargs) + f'{fine}'
         return self.func_2(*args, **kwargs)
 
 

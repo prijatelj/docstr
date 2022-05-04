@@ -89,11 +89,13 @@ class TestConfigArgParse:
         # Able to pass the converted yaml dict to configargparse. ArgumentParser.
         # parse_args() using `config_file_contents=`
         assert (
-            prog_cap.parse_known_args(
+            prog_cap.parse_args(
+                args=[],
                 namespace=NestedNamespace(),
                 config_file_contents=yaml.dump(prog_yaml_args),
             )
-            == example_cli.parse_known_args(
+            == example_cli.parse_args(
+                args=[],
                 namespace=NestedNamespace(),
                 config_file_contents=yaml.dump(expected_config),
             )
