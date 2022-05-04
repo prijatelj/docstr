@@ -169,6 +169,7 @@ This adds more detail to what is specified in the docstr pipeline section, all o
             - support of custom docstring parsers through Sphinx extentions.
         - Given an object whose doc string is fully parsed by docstr, output the template of the YAML config file to be editted.
         - The initialized program needs to have the option (possibly defaulting to) lazy initializing, such that  when the python interpretter gets to an object it then may be instantiated from the docstr CAP and values. Especially good for code that is massive in memory post init or takes a long time and you want to only execute it once necessary.
+        - Properly handle sys.exit codes for docstr run programs! At the moment, if the main function/method returns something other than an exit code, it will end with a SystemExit error!
     - Code redundancy reduction using the docstrings:
         - Decorator for specifying the args and kwargs of a function with format as:
             `def func(*args, **kwargs):` to avoid redundant writing of args, defaults, etc.
