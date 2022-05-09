@@ -641,8 +641,10 @@ class DocstringParser(object):
                 )
             else:
                 # TODO replace quick HACK, this expects the remainder be attr
-                #   Seems good to separate func and attr parsing if not same
-                #   format.
+                # Seems good to separate func and attr parsing if not same
+                # format. Though, I could possibly make them the same format
+                # since i control how Attributes are parsed, as above in
+                # AttirbuteDirective.
                 args, recursive_parse = self.parse_attr_list(
                     obj,
                     doc.children[field_list:],
@@ -849,6 +851,8 @@ class DocstringParser(object):
                         '',
                         self._get_object(obj, field.children[1].astext()),
                     )
+
+        # HERE CUT into metho/function for recusive parse handling.
 
         # TODO Recursively parse docs of valid types w/in whitelist, error o.w.
         for arg, linked_obj in recursive_parse.items():
