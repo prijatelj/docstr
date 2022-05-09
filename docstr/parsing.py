@@ -214,38 +214,54 @@ class AttributeBody(nodes.Structural, nodes.Element):
 class AttributeDirective(rst.Directive):
     """ReST parser for python class docstring attributes."""
     required_arguments = 1
-    optional_arguments = 0
+    optional_arguments = 1
     has_content = True
 
     def run(self):
         # Raise an error if the directive does not have contents.
-        self.assert_has_content()
+        try:
+            self.assert_has_content()
+            is_see_linking = False
+        except Exception as e:
+            if self.arguments[0] != 'see' or len(self.arguments) < 2:
+                raise ValueError(
+                    'Attribute Directive has no content and the first '
+                    "argument is not 'see' or there are less than 2 arguments "
+                    'parsed. `AttributeDirective` parsed arguments = '
+                    f'{self.arguments}'
+                ) from e
+            is_see_linking = True
 
         node = AttributeBody()
         name_node = AttributeName()
         name_node += nodes.Text(self.arguments[0])
         node += name_node
 
-        # Use the type option to create its own node, removing from body.
-        content = deepcopy(self.content)
-        pop = None
-        for i, line in enumerate(content):
-            if ':type:' == line[:6]:
-                type_node = AttributeType()
-                type_node += nodes.Text(line[6:].strip())
-                node += type_node
-                pop = i
-                break
-
-        if pop is not None:
-            del content[i]
+        if is_see_linking:
+            type_node = AttributeType()
+            type_node += nodes.Text(' '.join(self.arguments[1:]))
+            node += type_node
         else:
-            raise ValueError(f'No attribute type for {self.arguments[0]}!')
+            # Use the type option to create its own node, removing from body.
+            content = deepcopy(self.content)
+            pop = None
+            for i, line in enumerate(content):
+                if ':type:' == line[:6]:
+                    type_node = AttributeType()
+                    type_node += nodes.Text(line[6:].strip())
+                    node += type_node
+                    pop = i
+                    break
 
-        # Parse the body content as paragraphs
-        para = nodes.paragraph()
-        self.state.nested_parse(content, self.content_offset, para)
-        node += para
+            if pop is not None:
+                del content[i]
+            else:
+                raise ValueError(f'No attribute type for {self.arguments[0]}!')
+
+            # Parse the body content as paragraphs
+            para = nodes.paragraph()
+            self.state.nested_parse(content, self.content_offset, para)
+            node += para
 
         return [node]
 
@@ -553,9 +569,19 @@ class DocstringParser(object):
                         if ft_qname in self.whitelist:
                             recursive_parse[name] = found_types
 
+            if len(attrib_body) > 2:
+                description = attrib_body[2].astext()
+            else:
+                description = ValueExists.false
+                print('name = ', name)
+                print('description = ', description)
+                print('found_types = ', found_types)
+                print('default = ', default)
+                print('args = ', args)
+
             args[name] = ArgDoc(
                 name=name,
-                description=attrib_body[2].astext(),
+                description=description,
                 type=found_types,
                 default=default,
             )
@@ -623,10 +649,38 @@ class DocstringParser(object):
                 )
                 for arg, linked_obj in recursive_parse.items():
                     # Recursively parse the object
-                    args[arg].type = self.parse(
-                        linked_obj,
-                        recursion_limit=recursion_limit + 1,
-                    )
+                    if arg != 'see':
+                        args[arg].type = self.parse(
+                            linked_obj,
+                            recursion_limit=recursion_limit + 1,
+                        )
+                    else:
+                        linked_obj = self.parse(
+                                linked_obj,
+                                recursion_limit=recursion_limit + 1,
+                                #parent=args,
+                            )
+                        if len(args) > 1:
+                            if isinstance(linked_obj, FuncDocstring):
+                                args.update(linked_obj.args)
+                            elif isinstance(linked_obj, ClassDocstring):
+                                args.update(linked_obj.attributes)
+                            else:
+                                raise TypeError(
+                                    f"`see` in `{qualified_name}`'s attribs "
+                                    'links to unsupported parsed docstring '
+                                    f'type: {type(linked_obj)}'
+                                )
+
+                            # TODO handle making this obj's description that of
+                            # the linked obj when it is NOT the only arg.
+                            # Perhaps, modify description to include a notice
+                            # that it was copy pasted from the linked obj given
+                            # no description existed in the active obj.
+                            if description == ValueExists.false:
+                                description = linked_obj.description
+                        else:
+                            args = linked_obj
                 return description, args, ValueExists.false
         else:
             # The field list includes params, types, returns, and rtypes,
@@ -846,12 +900,16 @@ class DocstringParser(object):
                         f'parsing `{qualified_name}`',
                     ]))
                 if linked_obj == 'self':
+                    #if isinstance(parent, ClassDocstring):
+                    #    parsed_args = deepcopy()
                     if not isinstance(parent, OrderedDict):
-                        raise TypeError(' '.join([
-                            'Given parent `see self` is not an OrderedDict',
-                            f'when parsing object `{qualified_name}`, instead',
-                            f'given parent is type `{type(parent)}`.'
-                        ]))
+                        raise TypeError(
+                            'Given parent `see self` is not an OrderedDict '
+                            #'nor a ClassDocstring
+                            'when parsing object '
+                            f'`{qualified_name}`, instead' f'given parent is '
+                            f'type `{type(parent)}`.'
+                        )
                     parsed_args = deepcopy(parent)
                 else:
                     parsed_obj = self.parse(
