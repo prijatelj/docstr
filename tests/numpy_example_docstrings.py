@@ -453,3 +453,5 @@ class NumpyDocClassMultiLinking(NumpyDocClassLinking):
         custom_obj_instance = self.custom_obj_instance
         self.just_for_me = just_for_me
         super(self, NumpyDocClassLinking).__init__(*args, **kwargs)
+
+# TODO make an example of doc linking where you link to a method within a class
