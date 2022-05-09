@@ -886,30 +886,6 @@ class DocstringParser(object):
                     doc.children[field_list:],
                 )
 
-                """
-                # Doc linking via see all: see all args/attirbutes from object
-                params = self.parse_recursive_see_all(
-                    obj,
-                    qualified_name,
-                    recursive_parse,
-                    params,
-                    types,
-                    see_args_count,
-                    parent,
-                    recursion_limit,
-                )
-
-                # Specific arg doc linking within an object's __doc__
-                self.parse_recursive_see_specific(
-                    doc_linking,
-                    qualified_name,
-                    params,
-                    types,
-                    parent,
-                    recursion_limit,
-                )
-
-                #"""
                 for arg, linked_obj in recursive_parse.items():
                     # Recursively parse the object
                     if arg != 'see':
@@ -923,28 +899,24 @@ class DocstringParser(object):
                                 recursion_limit=recursion_limit + 1,
                                 #parent=args,
                             )
-                        if len(args) > 1:
-                            if isinstance(linked_obj, FuncDocstring):
-                                args.update(linked_obj.args)
-                            elif isinstance(linked_obj, ClassDocstring):
-                                args.update(linked_obj.attributes)
-                            else:
-                                raise TypeError(
-                                    f"`see` in `{qualified_name}`'s attribs "
-                                    'links to unsupported parsed docstring '
-                                    f'type: {type(linked_obj)}'
-                                )
-
-                            # TODO handle making this obj's description that of
-                            # the linked obj when it is NOT the only arg.
-                            # Perhaps, modify description to include a notice
-                            # that it was copy pasted from the linked obj given
-                            # no description existed in the active obj.
-                            if description == ValueExists.false:
-                                description = linked_obj.description
+                        if isinstance(linked_obj, FuncDocstring):
+                            args.update(linked_obj.args)
+                        elif isinstance(linked_obj, ClassDocstring):
+                            args.update(linked_obj.attributes)
                         else:
-                            args = linked_obj
-                #"""
+                            raise TypeError(
+                                f"`see` in `{qualified_name}`'s attribs "
+                                'links to unsupported parsed docstring '
+                                f'type: {type(linked_obj)}'
+                            )
+
+                        # TODO handle making this obj's description that of
+                        # the linked obj when it is NOT the only arg.
+                        # Perhaps, modify description to include a notice
+                        # that it was copy pasted from the linked obj given
+                        # no description existed in the active obj.
+                        if description == ValueExists.false:
+                            description = linked_obj.description
                 return description, args, ValueExists.false
         else:
             # The field list includes params, types, returns, and rtypes,
