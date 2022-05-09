@@ -242,7 +242,13 @@ class TestParseFuncDocLinkingSee:
     """Doc linking through the use of shortcut linking by `see`"""
     @pytest.mark.xfail
     def test_docstr_parse_func_linking(self, expected_func_linking):
-        parsed = parse(examples.func_linking, 'numpy')
+        parsed = parse(
+            examples.func_linking,
+            'numpy',
+            'numpy',
+            # TODO a test of w/ whitelist and w/o, as well as blacklist.
+            # whitelist=['tests.numpy_example_docstrings.func_defaults'],
+        )
         assert expected_func_linking == parsed
 
     @pytest.mark.xfail
@@ -250,7 +256,15 @@ class TestParseFuncDocLinkingSee:
         self,
         expected_func_linking_arg_pass_thru,
     ):
-        parsed = parse(examples.func_linking_arg_pass_thru, 'numpy')
+        parsed = parse(
+            examples.func_linking_arg_pass_thru,
+            'numpy',
+            # TODO a test of w/ whitelist and w/o, as well as blacklist.
+            #whitelist=[
+            #    'tests.numpy_example_docstrings.func_defaults',
+            #    'tests.numpy_example_docstrings.func_choices',
+            #],
+        )
         assert expected_func_linking_arg_pass_thru == parsed
 
     @pytest.mark.xfail
