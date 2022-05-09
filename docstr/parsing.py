@@ -587,6 +587,242 @@ class DocstringParser(object):
             )
         return args, recursive_parse
 
+    def parse_recursive_see_all(
+        self,
+        obj,
+        qualified_name,
+        recursive_parse,
+        params,
+        types,
+        see_args_count,
+        parent=None,
+        recursion_limit=0,
+    ):
+        """Logic for handling recursive parsing step to finish an object's
+        parsing. This is for handling the linking of all args or attirbutes
+        from the given object to this current object.
+
+        Returns
+        -------
+        OrderedDict
+            The parameters `params` after being filled with the recursively
+            parsed content.
+        """
+        # TODO Recursively parse docs of valid types w/in whitelist, error o.w.
+        for arg, linked_obj in recursive_parse.items():
+            #raise NotImplementedError('Recursive parse of objects w/in types')
+            # TODO at every _get_object, there is a chance that the object is
+            # An object able to be configured.
+
+            # Check if in whitelist, error otherwise
+            #if qname not in self.whitelist:
+            #    raise ValueError(
+            #        f'Object not in whitelist for recursive parse: {qname}'
+            #    )
+
+            # Recursively parse the object
+            params[arg].type = self.parse(
+                linked_obj,
+                recursion_limit=recursion_limit + 1,
+            )
+            # TODO Update params and types once parsed.
+
+        # En masse args doc linking from an object's __doc__
+        ordered_params = []
+        growing_arg_set = set(params.keys())
+        linked_obj_set = set()
+        for i in range(see_args_count):
+            see_name = f'see_{i}'
+            growing_arg_set.remove(see_name)
+
+            # Preserve parsed args order
+            if next(iter(params)) == see_name: # see name is first
+                see_params = params.popitem(last=False)[1]
+            elif next(reversed(params)) == see_name: # see name is last
+                see_params = params.popitem()[1]
+                ordered_params.append(params)
+            else: # Must iterate through and find see_name, probs rarest case.
+                save_params = params.popitem(last=False)
+                save_params = OrderedDict({save_params[0]: save_params[1]})
+                key, value = params.popitem(last=False)
+                while key != see_name:
+                    save_params[key] = value
+                    key, value = params.popitem(last=False)
+                ordered_params.append(save_params)
+                see_params = value
+
+            for linked_obj in see_params:
+                if linked_obj in linked_obj_set:
+                    raise ValueError(' '.join([
+                        'Duplicate linked object `{linked_obj}` found when',
+                        f'parsing `{qualified_name}`',
+                    ]))
+                if linked_obj == 'self':
+                    #if isinstance(parent, ClassDocstring):
+                    #    parsed_args = deepcopy()
+                    if not isinstance(parent, OrderedDict):
+                        raise TypeError(
+                            'Given parent `see self` is not an OrderedDict '
+                            #'nor a ClassDocstring
+                            'when parsing object '
+                            f'`{qualified_name}`, instead' f'given parent is '
+                            f'type `{type(parent)}`.'
+                        )
+                    parsed_args = deepcopy(parent)
+                else:
+                    parsed_obj = self.parse(
+                        self._get_object(obj, linked_obj),
+                        recursion_limit=recursion_limit + 1,
+                    )
+                    if isinstance(parsed_obj, ClassDocstring):
+                        parsed_args = parsed_obj.attributes
+                    else: # FuncDocstring
+                        parsed_args = parsed_obj.args
+
+                # Check for duplicates and update unique args and linked_objs
+                if dups := growing_arg_set & parsed_args.keys():
+                    raise ValueError(' '.join([
+                        'Duplicate arg name found when adding parsed args',
+                        f'from linked object `{linked_obj}` to current object',
+                        f'`{qualified_name}`: {dups}',
+                    ]))
+                growing_arg_set |= parsed_args.keys()
+                linked_obj_set.add(linked_obj)
+
+                ordered_params.append(parsed_args)
+
+            # Ensure all added args are within type for future type checking.
+            for key in growing_arg_set - types.keys():
+                types[key] = ValueExists.true
+
+        # If any params follow last see, append them to ordered_params
+        if params:
+            ordered_params.append(params)
+
+        # Reconstruct ordered params from the multiple param ordered dicts
+        if ordered_params:
+            new_params = OrderedDict()
+            for op in ordered_params:
+                new_params.update(op)
+            params = new_params
+
+        return params
+
+    def parse_recursive_see_specific(
+        self,
+        doc_linking,
+        qualified_name,
+        params,
+        types,
+        parent=None,
+        recursion_limit=0,
+    ):
+        """Modifies params and types in place with the parsed specifc args
+        linked via see .
+        """
+        parent_qname = qualified_name.rpartition('.')[0]
+
+        # TODO if any see ``, do first, preserve order, and note when dupes
+        # requested: same attribute, not multiple similar args to same see.
+
+        # TODO Perform depth first traversal specific arg doc linking via see.
+        for name, (linked_obj, arg_name) in doc_linking.items():
+            # TODO if already parsed, use that docstr item.
+            #   1. see another arg in the same docstr (will be parsed by now)
+            #       This applies for `self` when in class' docstr, otherwise
+            #       this checks if an already parsed docstring exists.
+            #       Probably should prevent silly multi-hop sees in this case.
+            #   2. see an arg in `self` (the class' attributes of `name`)
+            #       In case of __init__, likely attributes already parsed.
+            #       If not, then grab class' docstr from this obj. If not a
+            #       method then throw an error.
+            #   3. see an arg that has been parsed by this parser, requires a
+            #       "global" context from this parser's instance (self).
+
+            # TODO if not already parsed, parse arg_name in given object's doc
+            #   - TODO early exit parsing when only one arg is required.
+
+
+            # TODO 1. check local (in this object)
+            # TODO 2. check obj's module for linked_obj
+            # TODO 3. check if a fully qualified name
+            # Obtain the full qualified name of the linked object.
+            #qname = TODO
+
+            # TODO note that the final item on the namespace chain could be an
+            # attribute of a class or an argument! We probably do not want to
+            # support linked_obj arg_name to avoid unnecessry expressivity and
+            # keep with following standards for namespaces.
+
+            if linked_obj == 'self': # Set qname to the class object of method
+                # Keeping full qname up to class, rm the last function.
+                # NOTE this assumes that the parent of this object is the
+                # class that contains the invoked `self`. There are cases
+                # where this is not the case, but uncertain if common or
+                # desired to be handled. If the class is already parsed,
+                # then this can be handled within docstr parsing,
+                # otherwise, one would have to find the corret class within
+                # the module, but nesting makes this very difficult and
+                # leaves the realm of regular grammars.
+
+                # TODO assuming class is already parsed.
+                if parent: # Given parent class attributes from parse_class
+                    parent_attr = parent
+                    if not isinstance(parent_attr, OrderedDict):
+                        raise TypeError(' '.join([
+                            'Given parent `see self` is not an',
+                            'OrderedDict when parsing object',
+                            f'`{qualified_name}`, instead',
+                            f'given parent is type `{type(parent)}`.'
+                        ]))
+                else:
+                    parent_attr = self.parsed_tokens[parent_qname]
+
+                    if not isinstance(parent_attr, ClassDocstring):
+                        raise TypeError(' '.join([
+                            'Parent is not a Class when using `see self`',
+                            f'in `{qualified_name}`, instead',
+                            f'parent is type `{type(parent_attr)}`.'
+                        ]))
+                    parent_attr = parent_attr.attributes
+
+                if arg_name:
+                    parsed_arg = deepcopy(parent_attr[arg_name])
+                    parsed_arg.name = name
+                else: # arg name pass through: same name in parent.
+                    parsed_arg = deepcopy(parent_attr[name])
+
+                # TODO support override of default
+                # TODO support memory efficient view w/ override of values
+
+                if name in params and params[name].description:
+                    # Description override exists
+                    parsed_arg.description = params[name].description
+
+                # Ensure paired type and param check will pass.
+                params[name] = parsed_arg
+                types[name] = ValueExists.true
+            else:
+                raise NotImplementedError(' '.join([
+                    f'Doc linking w/o `see self`. Linked `{linked_obj}`',
+                    f'in parsing `{qualified_name}`.',
+                ]))
+
+            """
+            # Throw error if infinite looping of doc linking
+            elif qname in self.parsed_tokens:
+                if self.parsed_tokens[qname] == ValueExists.false:
+                    raise ValueError(
+                        f'`{qname}` is parsing. Infinite Loop in doc linking.'
+                    )
+                # Use the parsed object to complete or as the ArgDoc
+                raise NotImplementedError('Doc linking to parsed token.')
+            else: # TODO New, unencountered object to be parsed, recursively
+                linked_obj = self._get_object(correct_namespace, linked_obj)
+                self.parse(linked_obj, recursion_limit=recursion_limit + 1)
+            """
+        #return params
+
     def parse_desc_args_returns(self, obj, recursion_limit=0, parent=None):
         """Parse the docstring of a function.
 
@@ -649,6 +885,31 @@ class DocstringParser(object):
                     obj,
                     doc.children[field_list:],
                 )
+
+                """
+                # Doc linking via see all: see all args/attirbutes from object
+                params = self.parse_recursive_see_all(
+                    obj,
+                    qualified_name,
+                    recursive_parse,
+                    params,
+                    types,
+                    see_args_count,
+                    parent,
+                    recursion_limit,
+                )
+
+                # Specific arg doc linking within an object's __doc__
+                self.parse_recursive_see_specific(
+                    doc_linking,
+                    qualified_name,
+                    params,
+                    types,
+                    parent,
+                    recursion_limit,
+                )
+
+                #"""
                 for arg, linked_obj in recursive_parse.items():
                     # Recursively parse the object
                     if arg != 'see':
@@ -683,6 +944,7 @@ class DocstringParser(object):
                                 description = linked_obj.description
                         else:
                             args = linked_obj
+                #"""
                 return description, args, ValueExists.false
         else:
             # The field list includes params, types, returns, and rtypes,
@@ -852,209 +1114,27 @@ class DocstringParser(object):
                         self._get_object(obj, field.children[1].astext()),
                     )
 
-        # HERE CUT into metho/function for recusive parse handling.
-
-        # TODO Recursively parse docs of valid types w/in whitelist, error o.w.
-        for arg, linked_obj in recursive_parse.items():
-            #raise NotImplementedError('Recursive parse of objects w/in types')
-            # TODO at every _get_object, there is a chance that the object is
-            # An object able to be configured.
-
-            # Check if in whitelist, error otherwise
-            #if qname not in self.whitelist:
-            #    raise ValueError(
-            #        f'Object not in whitelist for recursive parse: {qname}'
-            #    )
-
-            # Recursively parse the object
-            params[arg].type = self.parse(
-                linked_obj,
-                recursion_limit=recursion_limit + 1,
-            )
-            # TODO Update params and types once parsed.
-
-        # En masse args doc linking from an object's __doc__
-        ordered_params = []
-        growing_arg_set = set(params.keys())
-        linked_obj_set = set()
-        for i in range(see_args_count):
-            see_name = f'see_{i}'
-            growing_arg_set.remove(see_name)
-
-            # Preserve parsed args order
-            if next(iter(params)) == see_name: # see name is first
-                see_params = params.popitem(last=False)[1]
-            elif next(reversed(params)) == see_name: # see name is last
-                see_params = params.popitem()[1]
-                ordered_params.append(params)
-            else: # Must iterate through and find see_name, probs rarest case.
-                save_params = params.popitem(last=False)
-                save_params = OrderedDict({save_params[0]: save_params[1]})
-                key, value = params.popitem(last=False)
-                while key != see_name:
-                    save_params[key] = value
-                    key, value = params.popitem(last=False)
-                ordered_params.append(save_params)
-                see_params = value
-
-            for linked_obj in see_params:
-                if linked_obj in linked_obj_set:
-                    raise ValueError(' '.join([
-                        'Duplicate linked object `{linked_obj}` found when',
-                        f'parsing `{qualified_name}`',
-                    ]))
-                if linked_obj == 'self':
-                    #if isinstance(parent, ClassDocstring):
-                    #    parsed_args = deepcopy()
-                    if not isinstance(parent, OrderedDict):
-                        raise TypeError(
-                            'Given parent `see self` is not an OrderedDict '
-                            #'nor a ClassDocstring
-                            'when parsing object '
-                            f'`{qualified_name}`, instead' f'given parent is '
-                            f'type `{type(parent)}`.'
-                        )
-                    parsed_args = deepcopy(parent)
-                else:
-                    parsed_obj = self.parse(
-                        self._get_object(obj, linked_obj),
-                        recursion_limit=recursion_limit + 1,
-                    )
-                    if isinstance(parsed_obj, ClassDocstring):
-                        parsed_args = parsed_obj.attributes
-                    else: # FuncDocstring
-                        parsed_args = parsed_obj.args
-
-                # Check for duplicates and update unique args and linked_objs
-                if dups := growing_arg_set & parsed_args.keys():
-                    raise ValueError(' '.join([
-                        'Duplicate arg name found when adding parsed args',
-                        f'from linked object `{linked_obj}` to current object',
-                        f'`{qualified_name}`: {dups}',
-                    ]))
-                growing_arg_set |= parsed_args.keys()
-                linked_obj_set.add(linked_obj)
-
-                ordered_params.append(parsed_args)
-
-            # Ensure all added args are within type for future type checking.
-            for key in growing_arg_set - types.keys():
-                types[key] = ValueExists.true
-
-        # If any params follow last see, append them to ordered_params
-        if params:
-            ordered_params.append(params)
-
-        # Reconstruct ordered params from the multiple param ordered dicts
-        if ordered_params:
-            new_params = OrderedDict()
-            for op in ordered_params:
-                new_params.update(op)
-            params = new_params
+        # Doc linking via see all meaning: see all args/attirbutes from object
+        params = self.parse_recursive_see_all(
+            obj,
+            qualified_name,
+            recursive_parse,
+            params,
+            types,
+            see_args_count,
+            parent,
+            recursion_limit,
+        )
 
         # Specific arg doc linking within an object's __doc__
-        if doc_linking:
-            parent_qname = qualified_name.rpartition('.')[0]
-
-            # TODO if any see ``, do first, preserve order, and note when dupes
-            # requested: same attribute, not multiple similar args to same see.
-
-            # TODO Perform depth first traversal specific arg doc linking via see.
-            for name, (linked_obj, arg_name) in doc_linking.items():
-                # TODO if already parsed, use that docstr item.
-                #   1. see another arg in the same docstr (will be parsed by now)
-                #       This applies for `self` when in class' docstr, otherwise
-                #       this checks if an already parsed docstring exists.
-                #       Probably should prevent silly multi-hop sees in this case.
-                #   2. see an arg in `self` (the class' attributes of `name`)
-                #       In case of __init__, likely attributes already parsed.
-                #       If not, then grab class' docstr from this obj. If not a
-                #       method then throw an error.
-                #   3. see an arg that has been parsed by this parser, requires a
-                #       "global" context from this parser's instance (self).
-
-                # TODO if not already parsed, parse arg_name in given object's doc
-                #   - TODO early exit parsing when only one arg is required.
-
-
-                # TODO 1. check local (in this object)
-                # TODO 2. check obj's module for linked_obj
-                # TODO 3. check if a fully qualified name
-                # Obtain the full qualified name of the linked object.
-                #qname = TODO
-
-                # TODO note that the final item on the namespace chain could be an
-                # attribute of a class or an argument! We probably do not want to
-                # support linked_obj arg_name to avoid unnecessry expressivity and
-                # keep with following standards for namespaces.
-
-                if linked_obj == 'self': # Set qname to the class object of method
-                    # Keeping full qname up to class, rm the last function.
-                    # NOTE this assumes that the parent of this object is the
-                    # class that contains the invoked `self`. There are cases
-                    # where this is not the case, but uncertain if common or
-                    # desired to be handled. If the class is already parsed,
-                    # then this can be handled within docstr parsing,
-                    # otherwise, one would have to find the corret class within
-                    # the module, but nesting makes this very difficult and
-                    # leaves the realm of regular grammars.
-
-                    # TODO assuming class is already parsed.
-                    if parent: # Given parent class attributes from parse_class
-                        parent_attr = parent
-                        if not isinstance(parent_attr, OrderedDict):
-                            raise TypeError(' '.join([
-                                'Given parent `see self` is not an',
-                                'OrderedDict when parsing object',
-                                f'`{qualified_name}`, instead',
-                                f'given parent is type `{type(parent)}`.'
-                            ]))
-                    else:
-                        parent_attr = self.parsed_tokens[parent_qname]
-
-                        if not isinstance(parent_attr, ClassDocstring):
-                            raise TypeError(' '.join([
-                                'Parent is not a Class when using `see self`',
-                                f'in `{qualified_name}`, instead',
-                                f'parent is type `{type(parent_attr)}`.'
-                            ]))
-                        parent_attr = parent_attr.attributes
-
-                    if arg_name:
-                        parsed_arg = deepcopy(parent_attr[arg_name])
-                        parsed_arg.name = name
-                    else: # arg name pass through: same name in parent.
-                        parsed_arg = deepcopy(parent_attr[name])
-
-                    # TODO support override of default
-                    # TODO support memory efficient view w/ override of values
-
-                    if name in params and params[name].description:
-                        # Description override exists
-                        parsed_arg.description = params[name].description
-
-                    # Ensure paired type and param check will pass.
-                    params[name] = parsed_arg
-                    types[name] = ValueExists.true
-                else:
-                    raise NotImplementedError(' '.join([
-                        f'Doc linking w/o `see self`. Linked `{linked_obj}`',
-                        f'in parsing `{qualified_name}`.',
-                    ]))
-
-                """
-                # Throw error if infinite looping of doc linking
-                elif qname in self.parsed_tokens:
-                    if self.parsed_tokens[qname] == ValueExists.false:
-                        raise ValueError(
-                            f'`{qname}` is parsing. Infinite Loop in doc linking.'
-                        )
-                    # Use the parsed object to complete or as the ArgDoc
-                    raise NotImplementedError('Doc linking to parsed token.')
-                else: # TODO New, unencountered object to be parsed, recursively
-                    linked_obj = self._get_object(correct_namespace, linked_obj)
-                    self.parse(linked_obj, recursion_limit=recursion_limit + 1)
-                """
+        self.parse_recursive_see_specific(
+            doc_linking,
+            qualified_name,
+            params,
+            types,
+            parent,
+            recursion_limit,
+        )
 
         # Any unmatched pairs of params and types raises an error
         if xor_set := set(types) ^ set(params):
