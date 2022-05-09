@@ -245,7 +245,6 @@ class TestParseFuncDocLinkingSee:
         parsed = parse(
             examples.func_linking,
             'numpy',
-            'numpy',
             # TODO a test of w/ whitelist and w/o, as well as blacklist.
             # whitelist=['tests.numpy_example_docstrings.func_defaults'],
         )
