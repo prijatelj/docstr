@@ -53,8 +53,7 @@ from docstr.docstring import (
 # parsed, where they are converted to reStructuredText and then parsed. So,
 # output Docstring Object to str of RST and then optionally convert to Google
 # or Numpy.
-#   NOTE that abstract syntax trees (ast) also supplies the structure of
-#   classes, funtions, methods, and other syntax trees. When applicable, its
+#   NOTE that abstract syntax trees (ast) also supplies the structure of #   classes, funtions, methods, and other syntax trees. When applicable, its
 #   use inplace of 3rd party packages may be more desirable since it is
 #   supplied by the python standard library.
 
@@ -100,6 +99,12 @@ def get_namespace_obj(namespace, name, default=ValueExists.false):
     try:
         return getattr(namespace, name)
     except AttributeError as e:
+        if '.' in name:
+            # TODO handle getting the method of a class; Do error raising
+            parts = name.rpartition('.')
+            class_obj = getattr(namespace, parts[0])
+            return getattr(class_obj, parts[-1])
+
         if default != ValueExists.false:
             return default
         raise e
@@ -391,7 +396,7 @@ class DocstringParser(object):
 
         # Temporary useful patterns to build others from
         section_end_pattern = fr'{self.re_section.pattern}|\Z'
-        name_pattern = r'[ \t]+(?P<name>[\*\w]+)'
+        name_pattern = r'[ \t]+(?P<name>[\*\w.]+)'
         # Non-Greedy kleene star
         doc_pattern = fr'[ \t]*(?P<doc>.*?)({section_end_pattern})'
 
@@ -591,7 +596,6 @@ class DocstringParser(object):
         self,
         obj,
         qualified_name,
-        recursive_parse,
         params,
         types,
         see_args_count,
@@ -608,25 +612,6 @@ class DocstringParser(object):
             The parameters `params` after being filled with the recursively
             parsed content.
         """
-        # TODO Recursively parse docs of valid types w/in whitelist, error o.w.
-        for arg, linked_obj in recursive_parse.items():
-            #raise NotImplementedError('Recursive parse of objects w/in types')
-            # TODO at every _get_object, there is a chance that the object is
-            # An object able to be configured.
-
-            # Check if in whitelist, error otherwise
-            #if qname not in self.whitelist:
-            #    raise ValueError(
-            #        f'Object not in whitelist for recursive parse: {qname}'
-            #    )
-
-            # Recursively parse the object
-            params[arg].type = self.parse(
-                linked_obj,
-                recursion_limit=recursion_limit + 1,
-            )
-            # TODO Update params and types once parsed.
-
         # En masse args doc linking from an object's __doc__
         ordered_params = []
         growing_arg_set = set(params.keys())
@@ -658,8 +643,6 @@ class DocstringParser(object):
                         f'parsing `{qualified_name}`',
                     ]))
                 if linked_obj == 'self':
-                    #if isinstance(parent, ClassDocstring):
-                    #    parsed_args = deepcopy()
                     if not isinstance(parent, OrderedDict):
                         raise TypeError(
                             'Given parent `see self` is not an OrderedDict '
@@ -710,6 +693,7 @@ class DocstringParser(object):
 
     def parse_recursive_see_specific(
         self,
+        recursive_parse,
         doc_linking,
         qualified_name,
         params,
@@ -720,6 +704,25 @@ class DocstringParser(object):
         """Modifies params and types in place with the parsed specifc args
         linked via see .
         """
+        # TODO Recursively parse docs of valid types w/in whitelist, error o.w.
+        for arg, linked_obj in recursive_parse.items():
+            #raise NotImplementedError('Recursive parse of objects w/in types')
+            # TODO at every _get_object, there is a chance that the object is
+            # An object able to be configured.
+
+            # Check if in whitelist, error otherwise
+            #if qname not in self.whitelist:
+            #    raise ValueError(
+            #        f'Object not in whitelist for recursive parse: {qname}'
+            #    )
+
+            # Recursively parse the object
+            params[arg].type = self.parse(
+                linked_obj,
+                recursion_limit=recursion_limit + 1,
+            )
+            # TODO Update params and types once parsed.
+
         parent_qname = qualified_name.rpartition('.')[0]
 
         # TODO if any see ``, do first, preserve order, and note when dupes
@@ -765,7 +768,6 @@ class DocstringParser(object):
                 # the module, but nesting makes this very difficult and
                 # leaves the realm of regular grammars.
 
-                # TODO assuming class is already parsed.
                 if parent: # Given parent class attributes from parse_class
                     parent_attr = parent
                     if not isinstance(parent_attr, OrderedDict):
@@ -775,7 +777,7 @@ class DocstringParser(object):
                             f'`{qualified_name}`, instead',
                             f'given parent is type `{type(parent)}`.'
                         ]))
-                else:
+                elif parent in self.parsed_tokens: # Class is already parsed.
                     parent_attr = self.parsed_tokens[parent_qname]
 
                     if not isinstance(parent_attr, ClassDocstring):
@@ -785,6 +787,20 @@ class DocstringParser(object):
                             f'parent is type `{type(parent_attr)}`.'
                         ]))
                     parent_attr = parent_attr.attributes
+                else:
+                    # Parse the class
+                    parent_attr = self.parse_class(
+                        get_module_object(parent_qname),
+                        recursion_limit=recursion_limit+1,
+                        parse_init=False,
+                    ).attributes
+
+                    # 1. Parse class w/ placeholder for init.
+                    # 2. Take attributes from it.
+                    # 3. Put incomplete parsed class (missing only init) in
+                    # place to finish.
+                    # 4. After finishing a pass of parsing, check if incomplete
+                    # classes to finish.
 
                 if arg_name:
                     parsed_arg = deepcopy(parent_attr[arg_name])
@@ -894,6 +910,11 @@ class DocstringParser(object):
                             recursion_limit=recursion_limit + 1,
                         )
                     else:
+                        # TODO This fundamnetally does not handle multiple
+                        # sees. this is why i want attribs and args to have
+                        # same format so i can reuse the code from args for
+                        # this.
+                        args.pop('see')
                         linked_obj = self.parse(
                                 linked_obj,
                                 recursion_limit=recursion_limit + 1,
@@ -1086,24 +1107,24 @@ class DocstringParser(object):
                         self._get_object(obj, field.children[1].astext()),
                     )
 
-        # Doc linking via see all meaning: see all args/attirbutes from object
-        params = self.parse_recursive_see_all(
-            obj,
-            qualified_name,
-            recursive_parse,
-            params,
-            types,
-            see_args_count,
-            parent,
-            recursion_limit,
-        )
-
         # Specific arg doc linking within an object's __doc__
         self.parse_recursive_see_specific(
+            recursive_parse,
             doc_linking,
             qualified_name,
             params,
             types,
+            parent,
+            recursion_limit,
+        )
+
+        # Doc linking via see all meaning: see all args/attirbutes from object
+        params = self.parse_recursive_see_all(
+            obj,
+            qualified_name,
+            params,
+            types,
+            see_args_count,
             parent,
             recursion_limit,
         )
@@ -1136,10 +1157,9 @@ class DocstringParser(object):
     def parse_class(
         self,
         obj,
-        name=None,
-        obj_type=ValueExists.false,
         methods=None,
         recursion_limit=0,
+        parse_init=True,
     ):
         """Parse the given class, obtaining its attributes and given functions.
 
@@ -1148,9 +1168,6 @@ class DocstringParser(object):
         obj : object
             The class object whose docstring and whose methods' docstrings are
             to be parsed.
-        name : str = None
-            name to assign to this object's ClassDocstring.
-        obj_type : type = None
         methods : [str] = None
             Additional methods whose docstrings are to be parsed.
         """
@@ -1160,41 +1177,47 @@ class DocstringParser(object):
         # Obtain the class' __init__ docstring
         # TODO Beware if this qname does not match.
         qname = get_full_qual_name(obj)
-        init_qname = f'{qname}.__init__'
-        if init_qname in self.parsed_tokens:
-            init = self.parsed_tokens[init_qname]
-        elif duck_test_issubclass_namedtuple(obj):
-            # If a namedtuple duck type, then __init__ is none, and use attrs
-            init = None
-        else:
+
+        if parse_init:
             if is_dataclass(obj) and isclass(obj):
                 # obj is a dataclass subclass, use docstring from __post_init__
                 init_obj = getattr(obj, '__post_init__')
+                init_qname = f'{qname}.__post_init__'
             else:
                 init_obj = getattr(obj, '__init__')
-            if not init_obj.__doc__:
-                # TODO if __init__ does not have a docstring or no args but
-                # Attributes does and the attribute names match the init's arg
-                # names, then simply use the attribute docstrings as the args,
-                # assuming it is like a dataclass w/ generated init.
-
-                # TODO Related, allow for only partially defined args if the
-                # others are like dataclass values (when actually a dataclass,
-                # able to be checked. This check could include if the arg is
-                # used to assign to the attribute without any change to its
-                # value (attrib = arg).
-                raise NotImplementedError(
-                    #logging.warning(
-                    'init w/o docstrings are not supported yet. %s',
-                    init_qname
-                )
+                init_qname = f'{qname}.__init__'
+            if init_qname in self.parsed_tokens:
+                init = self.parsed_tokens[init_qname]
+            elif duck_test_issubclass_namedtuple(obj):
+                # If a namedtuple duck type, then __init__ is none, & use attrs
+                init = None
             else:
-                init = self.parse_func(
-                    init_obj,
-                    recursion_limit=recursion_limit + 1,
-                    parent=args,
-                )
-                self.parsed_tokens[init_qname] = init
+                if not init_obj.__doc__:
+                    # TODO if __init__ does not have a docstring or no args but
+                    # Attributes does and the attribute names match the init's
+                    # arg names, then simply use the attribute docstrings as
+                    # the args, assuming it is like a dataclass w/ generated
+                    # init.
+
+                    # TODO Related, allow for only partially defined args if
+                    # the others are like dataclass values (when actually a
+                    # dataclass, able to be checked. This check could include
+                    # if the arg is used to assign to the attribute without any
+                    # change to its value (attrib = arg).
+                    raise NotImplementedError(
+                        #logging.warning(
+                        'init w/o docstrings are not supported yet. %s',
+                        init_qname
+                    )
+                else:
+                    init = self.parse_func(
+                        init_obj,
+                        recursion_limit=recursion_limit + 1,
+                        parent=args,
+                    )
+                    self.parsed_tokens[init_qname] = init
+        else:
+            init = ValueExists.false
 
         # Parse all given method docstrings
         if methods:
