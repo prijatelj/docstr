@@ -1,4 +1,5 @@
 """The base docstr command line interface through ConfigArgParse."""
+import logging
 import os
 from functools import partial
 from importlib import import_module
@@ -377,8 +378,14 @@ def docstr_cap(config=None, known_args=False, return_prog=False):
 
     # Based on cap_namespace.docstr main and entry_obj, run the init prog.
     if cap_namespace.docstr.main == cap_namespace.docstr.entry_obj.__name__:
+        logging.warning(
+            'Entry object was run during init. :/ '
+            'This needs fixed after prototype.'
+        )
+        return
         # Then it is a callable object to be run
-        return prog_ready()
+        #return prog_ready()
+
 
     # Is a class with main being a method on it to be called to run
     return getattr(prog_ready, cap_namespace.docstr.main)()
