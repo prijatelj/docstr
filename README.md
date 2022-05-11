@@ -165,6 +165,15 @@ This adds more detail to what is specified in the docstr pipeline section, all o
             - This absolutely needs unit tested once implemented
         - doc linking, e.g., `see module.sub_module.class.method`
             - further doc linking support is necessary with more tests.
+            - Perhaps the doc linking should be mimic that of importing modules.
+                - `arg_name : see self` gets the docs for self.arg_name.
+                    - Should be able to replace self with any import path to a class path.
+                - `see self` : currently is `see all` adding everything from the linked object's docstring.
+                - `see self.*` : This should be the new see all, or something similar.
+                    This way it is purposeful to import everything and similar to `... import *`.
+                    This avoids the issue when a class attributes has all init params and extra attributes that are not params, so if `see self` becomes "only include those that which are params in the input." then it does not include unwanted attributes as args.
+                    However, if you use splat extention, this no longer works.
+                    So perhaps also an easier way to grap a list of args from the linked object, rather than a chain of `args : see self`, which the prototype forces ppl to do now.
         - support of custom Sphinx napoleon
             - support of custom docstring parsers through Sphinx extentions.
         - Given an object whose doc string is fully parsed by docstr, output the template of the YAML config file to be editted.
