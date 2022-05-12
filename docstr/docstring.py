@@ -99,6 +99,10 @@ class MultiType(FrozenSet):
         for cast_type in self:
             try:
                 return cast_type(x)
+            #except ValueError as err:
+            except TypeError as err:
+                if cast_type == x:
+                    return cast_type
             except ValueError as err:
                 pass
         raise ValueError(' '.join([
