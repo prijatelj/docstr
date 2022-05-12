@@ -96,6 +96,9 @@ class MultiType(FrozenSet):
         # take object and tuple types?
 
     def __call__(self, x):
+        if str in self: # prioritize str, mainly for when both str & list exist
+            if isinstance(x, str):
+                return x
         for cast_type in self:
             try:
                 return cast_type(x)
