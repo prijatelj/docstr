@@ -79,14 +79,12 @@ class MultiType:
     # isinstance(instance, {'set', 'of', 'types'}) is desirable.
 """
 
-class MultiType(FrozenSet):
+class MultiType(tuple):
     """A frozenset of multipe types. As a callable, casts the objects into one
     of its types.
     """
-    def __new__(cls, types: Iterable):
-        return super(MultiType, cls).__new__(cls, types)
-
-    #def __init__(self, types: Iterable)
+    #def __new__(cls, types: Iterable):
+    #    return super(MultiType, cls).__new__(cls, types)
 
     def check(self, objs):
         raise NotImplementedError('Consider pydantic? or extend argparse')

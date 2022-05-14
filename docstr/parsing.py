@@ -557,7 +557,7 @@ class DocstringParser(object):
                 found_types.append(self._get_object(obj, found))
 
             if len(found_types) > 1:
-                found_types = MultiType(set(found_types))
+                found_types = MultiType(found_types)
             else:
                 found_types = found_types[0]
                 if self.whitelist:
@@ -1041,7 +1041,7 @@ class DocstringParser(object):
                     found_types.append(self._get_object(obj, found))
 
                 if len(found_types) > 1:
-                    found_types = MultiType(set(found_types))
+                    found_types = MultiType(found_types)
                 else:
                     found_types = found_types[0]
 
