@@ -151,7 +151,7 @@ This adds more detail to what is specified in the docstr pipeline section, all o
           child class that inherits from that parent and is still configurable.
           This is a common and important use case to support.
             - This absolutely needs unit tested once implemented
-        -  Option to ignore the docs (especially when there are none in
+        -  !! Option to ignore the docs (especially when there are none in
           a 3rd party) and to instead be informed by the type hinting and
           defaults used in the python declaration of the function/method.
             - the point is to write once with docstrings, but if 3rd party's do
@@ -163,6 +163,15 @@ This adds more detail to what is specified in the docstr pipeline section, all o
               docstring, where the latter is a currently supported workaround
               at the expense of the user's time.
             - This absolutely needs unit tested once implemented
+            - This feature is very important. Perhaps should separate from docstr and create a project that only traverses python objects with type hints and converts those type hinted functions, classes, methods, etc... into heirarchical ConfigArgParse objects.
+                Check if such a project already exists!
+                From there, docstr would depend on that underlying project to:
+                - traverse the python specified (non-docstring) object graph
+                - create a Nested/Hierarchical ConfigArgParse module from the type hints of an object
+                - use the common place Python Type Hinting ([typing][https://docs.python.org/3/library/typing.html]) package as the standard of typing all objects and variables.
+                    - thus all parsed docstring types would be converted into appropriate python typing objects.
+                - support parsing of objects w/o doc-strings or prioritize type hinting over parsed types in the __doc__.
+                - this would also provide a connection to any type checking packages that rely on type hinting.
         - doc linking, e.g., `see module.sub_module.class.method`
             - further doc linking support is necessary with more tests.
             - Perhaps the doc linking should be mimic that of importing modules.
