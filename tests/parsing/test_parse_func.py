@@ -53,7 +53,7 @@ def expected_func_defaults(expected_func):
 def expected_func_choices(expected_func_defaults):
     expected_func_defaults = copy.deepcopy(expected_func_defaults)
     expected_func_defaults.type = examples.func_choices
-    choices = docstring.MultiType({'foo', 'bar'})
+    choices = docstring.MultiType(('foo', 'bar'))
     expected_func_defaults.args['foo'].type = choices
     expected_func_defaults.args['bar'].type = choices
     return expected_func_defaults
@@ -111,7 +111,7 @@ def expected_func_linking(expected_func_defaults):
 def expected_func_linking_arg_pass_thru(expected_func_defaults):
     expected_func_defaults.type = examples.func_linking_arg_pass_thru
     expected_func_defaults.args['bar'].type = docstring.MultiType(
-        {'foo', 'bar'},
+        ('foo', 'bar'),
     )
     return expected_func_defaults
 
@@ -125,7 +125,7 @@ def expected_func_linking_args(expected_func_defaults):
 
     expected_func_defaults.args['far'] = expected_func_defaults.args['bar']
     expected_func_defaults.args['far'].type = docstring.MultiType(
-        {'foo', 'bar'},
+        ('foo', 'bar'),
     )
 
     del expected_func_defaults.args['foo'], expected_func_defaults.args['bar']
@@ -144,7 +144,7 @@ def expected_func_linking_see_end(expected_func_defaults):
         fizz=docstring.ArgDoc('fizz', str, desc),
         buzz=docstring.ArgDoc(
             'buzz',
-            docstring.MultiType({'fizz', 'buzz'}),
+            docstring.MultiType(('fizz', 'buzz')),
             desc,
         ),
     )
@@ -165,7 +165,7 @@ def expected_func_linking_see_start(expected_func_defaults):
         fizz=docstring.ArgDoc('fizz', str, desc, 'fizz'),
         buzz=docstring.ArgDoc(
             'buzz',
-            docstring.MultiType({'fizz', 'buzz'}),
+            docstring.MultiType(('fizz', 'buzz')),
             desc,
             'buzz',
         ),
@@ -188,7 +188,7 @@ def expected_func_linking_see_mid(expected_func_defaults):
 
     new_args['buzz'] = docstring.ArgDoc(
         'buzz',
-        docstring.MultiType({'fizz', 'buzz'}),
+        docstring.MultiType(('fizz', 'buzz')),
         desc,
         'buzz',
     )
