@@ -1,9 +1,10 @@
 """The base docstr command line interface through ConfigArgParse."""
-import logging
-import os
 from functools import partial
 from importlib import import_module
+import logging
+import os
 from operator import attrgetter
+import sys
 import yaml
 
 import configargparse as cap
@@ -191,6 +192,17 @@ def prototype_hack_reformat_yaml_dict_unnested_cap(config_path):
     cap_namespace.docstr.main = docstr_config.pop('main', None)
     cap_namespace.docstr.configs = docstr_config.pop('configs', None)
 
+    cap_namespace.docstr.log_sink = docstr_config.pop('log_sink', None)
+    cap_namespace.docstr.log_level = docstr_config.pop('log_level', None)
+
+    # Accept both ints and str for log level
+    if cap_namespace.docstr.log_level is not None:
+        try:
+            cap_namespace.docstr.log_level = \
+                int(cap_namespace.docstr.log_level)
+        except ValueError:
+            pass
+
     if len(docstr_config) > 1:
         raise ValueError(
             f'Unexpected more keys, other than from imoprt:\n{docstr_config}'
@@ -291,7 +303,7 @@ def prototype_hack_reformat_yaml_dict_unnested_cap(config_path):
 def docstr_cap(config=None, known_args=False, return_prog=False):
     """The docstr main ConfigArgParser."""
     if config is None:
-        from sys import argv as sys_argv
+        sys_argv = sys.argv
         config = sys_argv[1]
 
         if len(sys_argv) > 2 :
@@ -308,6 +320,25 @@ def docstr_cap(config=None, known_args=False, return_prog=False):
 
     # Parse the yaml config into the format for docstr prototype w/ CAP
     cap_namespace = prototype_hack_reformat_yaml_dict_unnested_cap(config)
+
+    # Handle configuring root logger
+    if isinstance(cap_namespace.docstr.log_level, str):
+        log_level = getattr(logging, log_level.upper(), None)
+    else:
+        log_level = log_level
+
+    if cap_namespace.docstr.log_sink in {'stderr', 'stdout'}:
+        logging.basicConfig(
+            stream=getattr(sys, cap_namespace.docstr.log_sink),
+            level=log_level,
+            format='%(asctime)s; %(levelname)s: %(message)s',
+        )
+    elif cap_namespace.docstr.log_sink is not None:
+        logging.basicConfig(
+            filename=cap_namespace.docstr.log_sink,
+            level=log_level,
+            format='%(asctime)s; %(levelname)s: %(message)s',
+        )
 
     #root_cap = cap.ArgumentParser(
     #    prog='docstr',
