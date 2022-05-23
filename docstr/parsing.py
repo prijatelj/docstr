@@ -8,7 +8,6 @@ from dataclasses import is_dataclass
 from inspect import getmodule, isclass
 from importlib import import_module
 from keyword import iskeyword
-import logging
 from operator import attrgetter
 import re
 import sys
@@ -31,6 +30,10 @@ from docstr.docstring import (
     BaseDoc,
     Namespace,
 )
+
+import logging
+logger = logging.getLogger(__name__)
+
 
 # Modify `sphinxcontrib.napoleon` to include `exputils` mod to Numpy style
 # Use respective style: `sphinxcontrib.napoleon.GoogleDocstring(docstring,
@@ -578,11 +581,11 @@ class DocstringParser(object):
                 description = attrib_body[2].astext()
             else:
                 description = ValueExists.false
-                logging.debug('name = %s', name)
-                logging.debug('description = %s', description)
-                logging.debug('found_types = %s', found_types)
-                logging.debug('default = %s', default)
-                logging.debug('args = %s', args)
+                logger.debug('name = %s', name)
+                logger.debug('description = %s', description)
+                logger.debug('found_types = %s', found_types)
+                logger.debug('default = %s', default)
+                logger.debug('args = %s', args)
 
             args[name] = ArgDoc(
                 name=name,

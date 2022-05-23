@@ -19,6 +19,7 @@ from docstr.configargparse import (
 )
 from docstr.docstring import get_full_qual_name
 
+
 # TODO Run ConfigArgParse subparser
 def run_cap(subparsers):
     """Given a config file, run the program using docstr, parsing as necessary.
@@ -318,6 +319,7 @@ def docstr_cap(config=None, known_args=False, return_prog=False):
     if ext != '.yaml':
         raise NotImplementedError('Currently only yaml configs are supported.')
 
+    #logging.debug('Parsing docstr args and reformatting config internally.')
     # Parse the yaml config into the format for docstr prototype w/ CAP
     cap_namespace = prototype_hack_reformat_yaml_dict_unnested_cap(config)
 
@@ -335,13 +337,13 @@ def docstr_cap(config=None, known_args=False, return_prog=False):
         logging.basicConfig(
             stream=getattr(sys, cap_namespace.docstr.log_sink),
             level=log_level,
-            format='%(asctime)s; %(levelname)s: %(message)s',
+            format='%(asctime)s; %(levelname)s: %(name)s: %(message)s',
         )
     elif cap_namespace.docstr.log_sink is not None:
         logging.basicConfig(
             filename=cap_namespace.docstr.log_sink,
             level=log_level,
-            format='%(asctime)s; %(levelname)s: %(message)s',
+            format='%(asctime)s; %(levelname)s: %(name)s: %(message)s',
         )
 
     #root_cap = cap.ArgumentParser(
@@ -363,6 +365,9 @@ def docstr_cap(config=None, known_args=False, return_prog=False):
     #parse_cap(subcaps)
     #compile_cap(subcaps)
 
+    logger = logging.getLogger(__name__)
+    logger.debug('Parsing program docstrings.')
+
     # TODO pass the docstr cap to the parse_config() or parse()
     #   We want docstr cap to handle config path, given file stream, & dict.
     #parse_config(*root_cap.parse_known_args(namespace=NestedNamespace()))
@@ -381,13 +386,14 @@ def docstr_cap(config=None, known_args=False, return_prog=False):
     else:
         loader = 'yaml'
 
-
+    logger.debug('Generating ConfigArgParser for program.')
     # TODO parsing of docstrings finished, get the CAP form those tokens
     prog_cap = get_configargparser(tokens, config_file_parser=loader)
 
     # TODO run the program with the parsed tokens and aligned CAP values
     #getattr(**prog_cap.parse_args(args.prog_args), docstr_args.main)()
 
+    logger.debug('Parsing program arguments.')
     if known_args:
         args = prog_cap.parse_known_args(
             args=prog_args,
@@ -406,17 +412,18 @@ def docstr_cap(config=None, known_args=False, return_prog=False):
         )
     #setattr(cap_namespace, cap_namespace.docstr.prog_name, args)
 
+    logger.debug('Beginning to initialize program.')
     prog_ready = init_prog(args)
 
 
     if return_prog:
-        logging.debug('Program is ready. Now returning.\n=====')
+        logger.debug('Program is ready. Now returning.\n=====')
         return prog_ready
-    logging.debug('Program is ready. Now running.\n=====')
+    logger.debug('Program is ready. Now running.\n=====')
 
     # Based on cap_namespace.docstr main and entry_obj, run the init prog.
     if cap_namespace.docstr.main == cap_namespace.docstr.entry_obj.__name__:
-        logging.warning(
+        logger.warning(
             'Entry object was run during init. :/ '
             'This needs fixed after prototype.'
         )
