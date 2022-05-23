@@ -52,7 +52,7 @@ the prototype where any non-empty str input including "False" and
     )
     # NOTE That here, int_float is shorthand, and the objects won't be the same
     # in the actual parsed docstring.
-    int_float = docstring.MultiType({int, float})
+    int_float = docstring.MultiType((int, float))
 
     return docstring.ClassDocstring(
         examples.NumpyDocClass,
