@@ -408,8 +408,11 @@ def docstr_cap(config=None, known_args=False, return_prog=False):
 
     prog_ready = init_prog(args)
 
+
     if return_prog:
+        logging.debug('Program is ready. Now returning.\n=====')
         return prog_ready
+    logging.debug('Program is ready. Now running.\n=====')
 
     # Based on cap_namespace.docstr main and entry_obj, run the init prog.
     if cap_namespace.docstr.main == cap_namespace.docstr.entry_obj.__name__:
