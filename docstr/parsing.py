@@ -578,11 +578,11 @@ class DocstringParser(object):
                 description = attrib_body[2].astext()
             else:
                 description = ValueExists.false
-                logging.debug('name = ', name)
-                logging.debug('description = ', description)
-                logging.debug('found_types = ', found_types)
-                logging.debug('default = ', default)
-                logging.debug('args = ', args)
+                logging.debug('name = %s', name)
+                logging.debug('description = %s', description)
+                logging.debug('found_types = %s', found_types)
+                logging.debug('default = %s', default)
+                logging.debug('args = %s', args)
 
             args[name] = ArgDoc(
                 name=name,

@@ -323,7 +323,11 @@ def docstr_cap(config=None, known_args=False, return_prog=False):
 
     # Handle configuring root logger
     if isinstance(cap_namespace.docstr.log_level, str):
-        log_level = getattr(logging, log_level.upper(), None)
+        log_level = getattr(
+            logging,
+            cap_namespace.docstr.log_level.upper(),
+            None,
+        )
     else:
         log_level = cap_namespace.docstr.log_level
 
