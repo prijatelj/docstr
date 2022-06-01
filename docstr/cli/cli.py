@@ -172,15 +172,21 @@ def unknown_tag(loader, suffix, node):
 
 
 def prototype_hack_reformat_yaml_dict_unnested_cap(config_path):
-    with open(config_path, 'r') as openf:
-        loader = yaml.SafeLoader
-        #loader.add_constructor(None, lambda x, y: x.construct_mapping(y, True))
-        loader.add_multi_constructor('!', unknown_tag)
-        #loader.add_multi_constructor(
-        #    '',
-        #    lambda loader, tag_suffix, node: tag_suffix + ' ' + node.value,
-        #)
-        config = yaml.load(openf, Loader=loader)
+    if isinstance(config_path, str):
+        with open(config_path, 'r') as openf:
+            loader = yaml.SafeLoader
+            #loader.add_constructor(None, lambda x, y: x.construct_mapping(y,
+            #   True))
+            #loader.add_multi_constructor('!', unknown_tag)
+            #loader.add_multi_constructor(
+            #    '', lambda loader, tag_suffix, node: tag_suffix + ' ' +
+            #    node.value,
+            #)
+            config = yaml.load(openf, Loader=loader)
+    elif isinstance(config_path, dict):
+        config = config_path
+    else:
+        raise TypeError(f'Unexpected config_path type: {type(config_path)}')
 
     # TODO parse docstr config & namespace things from docstr part of yaml
     docstr_parsed = {}
@@ -315,9 +321,12 @@ def docstr_cap(config=None, known_args=False, return_prog=False):
         prog_args = None
 
     # NOTE Does note need to be a sys_argv, can be a str positional in CAP.
-    ext = os.path.splitext(config)[-1]
-    if ext != '.yaml':
-        raise NotImplementedError('Currently only yaml configs are supported.')
+    if isinstance(config, str):
+        ext = os.path.splitext(config)[-1]
+        if ext != '.yaml':
+            raise NotImplementedError(
+                'Currently only yaml configs are supported.',
+            )
 
     #logging.debug('Parsing docstr args and reformatting config internally.')
     # Parse the yaml config into the format for docstr prototype w/ CAP
