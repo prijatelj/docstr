@@ -366,6 +366,12 @@ def get_configargparser(
     Returns
     -------
     configargparse.ArgumentParser | argparse._ArgumentGroup
+
+    Note
+    ----
+    With current ConfigArgParser generation expecting to have all arguments
+    have their full name specified, All args under a configurable item in a
+    multitype must be _not required_ by CAP standards.
     """
     # Type checking of docstring and setting up: args, description, etc.
     if isinstance(docstring, ClassDocstring):
@@ -459,17 +465,33 @@ def get_configargparser(
             recursive_args[arg_key].update(arg_kwargs)
             continue
         elif isinstance(arg.type, MultiType):
-            # TODO consider MultiType allowing recusive config gen
-
             # TODO consider case when parent class given, but not the actual
             # class that'd need configured. This would be resolved by allowing
             # "live parse" or "JIT compilation" of an object/config given
             # within this arg.
 
+            # TODO consider MultiType allowing recusive config gen
+            all_literals = True
+            config_multitype = False
+            for arg_type in arg.type:
+                if isinstance(arg_type, (ClassDocstring, FuncDocstring)):
+                    all_literals &= False
+                    config_multitype = True
+                elif all_literals:
+                    all_literals &= not isinstance(arg_type, type)
+
             # choices is if there are only literals in type/MultiType.
-            all_literals = all([not isinstance(t, type) for t in arg.type])
             if all_literals:
                 arg_kwargs['choices'] = arg.type
+
+            if config_multitype:
+                # Cannot support this as is w/o being informed by config input,
+                # but the prototype hack conversion of yaml config only expects
+                # a single class, never a MultiType of configurable items.
+                raise NotImplementedError(
+                    'Configurable objects in MultiType are not supported atm: '
+                    f'{arg.type}'
+                )
 
         # Handle boolean args' casting as they are a special case.
         if arg.type is bool:
