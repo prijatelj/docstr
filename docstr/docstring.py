@@ -80,8 +80,8 @@ class MultiType:
 """
 
 class MultiType(tuple):
-    """A frozenset of multipe types. As a callable, casts the objects into one
-    of its types.
+    """A tuple of multipe types. As a callable, casts the objects into one
+    of its types prioritizing the order of types within the tuple.
     """
     #def __new__(cls, types: Iterable):
     #    return super(MultiType, cls).__new__(cls, types)
@@ -110,7 +110,6 @@ class MultiType(tuple):
             f'The given object `{x}` is not cast-able to any of the types:'
             f'{self}'
         ]))
-
 
 
 # TODO For each of these dataclasses, make them tokenizers for their respective
