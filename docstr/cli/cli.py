@@ -1,4 +1,5 @@
 """The base docstr command line interface through ConfigArgParse."""
+from datetime import datetime
 from functools import partial
 from importlib import import_module
 import logging
@@ -18,6 +19,67 @@ from docstr.configargparse import (
     init_prog,
 )
 from docstr.docstring import get_full_qual_name
+
+# tmp rm due to basic config wanted to be set after.
+#import logging
+#logger = logging.getLogger(__name__)
+
+
+def filename_append(filename, suffix):
+    """Appends text to the end of the filename before the file extention."""
+    root, ext = os.path.splitext(filename)
+
+    if ext:
+        # TODO add optional to ignore ext if fits some pattern.
+        # Perhaps add given extenstion to ease respecting the extention in
+        # cases where the existing setup fails
+
+        return f'{root}{suffix}{ext}'
+
+    # If there is no extention, simply append suffix
+    return f'{filename}{suffix}'
+
+
+def create_filepath(
+    filepath,
+    overwrite=False,
+    datetime_fmt='_%Y-%m-%d_%H-%M-%S.%f',
+):
+    """Ensures the directories along the filepath exists. If the file exists
+    and overwrite is False, then the datetime is appeneded to the filename
+    while respecting the extention.
+
+    Note
+    ----
+    If there is no file extension, determined via existence of a period at the
+    end of the filepath with no filepath separator in the part of the path that
+    follows the period, then the datetime is appeneded to the end of the file
+    if it already exists.
+    """
+    # Check if file already exists
+    if not overwrite and os.path.isfile(filepath):
+        #logger.warning(
+        print(
+            '`overwrite` is False to prevent overwriting existing files '
+            'and there is an existing file at the given filepath: '
+            f'`{filepath}`',
+        )
+
+        # NOTE beware possibility of program writing the same file in parallel
+        filepath = filename_append(
+            filepath,
+            datetime.now().strftime(datetime_fmt),
+        )
+
+        #logger.warning
+        print(f'The filepath has been changed to: {filepath}')
+    else:
+        # Ensure the directory exists
+        dir_path = os.path.dirname(filepath)
+        if dir_path:
+            os.makedirs(dir_path, exist_ok=True)
+
+    return filepath
 
 
 # TODO Run ConfigArgParse subparser
@@ -350,7 +412,7 @@ def docstr_cap(config=None, known_args=False, return_prog=False):
         )
     elif cap_namespace.docstr.log_sink is not None:
         logging.basicConfig(
-            filename=cap_namespace.docstr.log_sink,
+            filename=create_filepath(cap_namespace.docstr.log_sink),
             level=log_level,
             format='%(asctime)s; %(levelname)s: %(name)s: %(message)s',
         )
