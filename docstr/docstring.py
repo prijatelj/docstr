@@ -46,6 +46,8 @@ import configargparse as cap
 
 def get_full_qual_name(obj):
     """Returns the given object's fully qualified name as a str."""
+    if inspect.ismodule(obj):
+        return obj.__name__
     return f'{obj.__module__}.{obj.__qualname__}'
 
 

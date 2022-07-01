@@ -822,10 +822,48 @@ class DocstringParser(object):
                 params[name] = parsed_arg
                 types[name] = ValueExists.true
             else:
-                raise NotImplementedError(' '.join([
-                    f'Doc linking w/o `see self`. Linked `{linked_obj}`',
-                    f'in parsing `{qualified_name}`.',
-                ]))
+                # TODO see non-self object w/o parent from function needs
+                # tested!
+                if not parent:
+                    parent = f'{parent_qname}.{linked_obj}'
+                if parent in self.parsed_tokens: # Class is already parsed.
+                    parent_attr = self.parsed_tokens[parent_qname]
+
+                    if not isinstance(parent_attr, ClassDocstring):
+                        raise TypeError(' '.join([
+                            'Parent is not a Class when using `see self`',
+                            f'in `{qualified_name}`, instead',
+                            f'parent is type `{type(parent_attr)}`.'
+                        ]))
+                    parent_attr = parent_attr.attributes
+                else:
+                    # Parse the class
+                    parent_attr = self.parse_class(
+                        get_module_object(parent),
+                        recursion_limit=recursion_limit+1,
+                        parse_init=False,
+                    ).attributes
+                    #raise NotImplementedError(' '.join([
+                    #    f'Doc linking w/o `see self`. Linked `{linked_obj}`',
+                    #    f'in parsing `{qualified_name}`.',
+                    #]))
+
+                if arg_name:
+                    parsed_arg = deepcopy(parent_attr[arg_name])
+                    parsed_arg.name = name
+                else: # arg name pass through: same name in parent.
+                    parsed_arg = deepcopy(parent_attr[name])
+
+                # TODO support override of default
+                # TODO support memory efficient view w/ override of values
+
+                if name in params and params[name].description:
+                    # Description override exists
+                    parsed_arg.description = params[name].description
+
+                # Ensure paired type and param check will pass.
+                params[name] = parsed_arg
+                types[name] = ValueExists.true
 
             """
             # Throw error if infinite looping of doc linking
