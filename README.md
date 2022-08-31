@@ -31,6 +31,17 @@ There are small Numpy docstring examples of the code with docstrings and the con
 4. Efficiency
     - efficient code creation and execution.
 
+#### Build off of strong tools
+
+Docstr should build off of existing tools that do their job well, such as
+
+- [python typing](https://docs.python.org/3/library/typing.html),
+- [pydantic](https://github.com/pydantic/pydantic),
+- [typer](https://github.com/tiangolo/typer/commits/master), and
+- [JSON Schema](https://json-schema.org/)
+
+All of these are worth looking into for the job they serve alone, and furthermore for integrating docstr with.
+
 #### Docstr Pipeline Use
 
 1. **Load Input** Give objects whose docstrings are to be parsed
