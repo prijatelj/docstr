@@ -100,13 +100,17 @@ class MultiType(tuple):
             if isinstance(x, str):
                 return x
         for cast_type in self:
+            if cast_type is None and x == 'None':
+                return None
             try:
                 return cast_type(x)
-            #except ValueError as err:
             except TypeError as err:
                 if cast_type == x:
                     return cast_type
-            except ValueError as err:
+                else:
+                    raise TypeError('x != cast_type: %s != %s', x, cast_type)
+            #except ValueError as err:
+            except:
                 pass
         raise ValueError(' '.join([
             f'The given object `{x}` is not cast-able to any of the types:'
